@@ -15,13 +15,15 @@ SOURCES += main.cpp\
     glwidget.cpp \
     camera.cpp \
     bbox.cpp \
-    trianglemesh.cpp
+    trianglemesh.cpp \
+    cornertable.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
     camera.h \
     bbox.h \
-    trianglemesh.h
+    trianglemesh.h \
+    cornertable.h
 
 LIBS += -lGLU
 

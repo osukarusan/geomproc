@@ -37,10 +37,9 @@ void CornerTable::buildTable(const std::vector<int>& tris)
                 int o = map[p];
                 oTable[c] = o;
                 oTable[o] = c;
+                map.erase(map.find(p));
             }
         }
     }
-
-    // insertar la resta!
 
 }
