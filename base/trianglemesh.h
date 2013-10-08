@@ -6,6 +6,7 @@
 #include <vector>
 #include "glm/glm.hpp"
 #include "bbox.h"
+#include "cornertable.h"
 
 
 using namespace std;
@@ -20,13 +21,16 @@ private:
 	vector<vec3> vertices, normals;
 	vector<int> vTable;
 
+    CornerTable cornerTable;
+
 public:
 	TriangleMesh();
 
 	bool load(const char *filename);
 	void free();
 	void getBBox(BBox &bbox);
-	void render(bool bWireframe);
+    void render(bool bWireframe);
+    void renderCornerColors();
 
 private:
 	bool loadHeader(ifstream &fin);

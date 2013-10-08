@@ -3,6 +3,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#ifdef MACOSX
+#define MODELS_DIR "../../../../models"
+#else
+#define MODELS_DIR "../models"
+#endif
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -26,7 +31,7 @@ void MainWindow::on_actionOpen_triggered()
 {
 	QString filename;
 
-	filename = QFileDialog::getOpenFileName(this, tr("Load model"), "./", tr("PLY Files (*.ply)"));
+    filename = QFileDialog::getOpenFileName(this, tr("Load model"), MODELS_DIR, tr("PLY Files (*.ply)"));
 	if(!filename.isNull())
 	{
 		if(!ui->glwidget->loadMesh(filename))

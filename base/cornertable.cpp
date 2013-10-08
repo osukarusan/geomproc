@@ -1,6 +1,7 @@
 #include "cornertable.h"
 #include <map>
 #include <utility>
+#include <iostream>
 
 
 CornerTable::CornerTable()
@@ -41,5 +42,11 @@ void CornerTable::buildTable(const std::vector<int>& tris)
             }
         }
     }
+}
 
+bool CornerTable::checkTable() const {
+    for (int c = 0; c < int(vTable.size()); c++) {
+        if (opposite(c) != -1 && opposite(opposite(c)) != c) return false;
+    }
+    return true;
 }

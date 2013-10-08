@@ -1,8 +1,25 @@
 #include <iostream>
 #include <string.h>
-#include <GL/gl.h>
+#ifdef MACOSX
+#include <OpenGL/glu.h>
+#include <OpenGL/glu.h>
+#else
 #include <GL/glu.h>
+#include <GL/glu.h>
+#endif
 #include "trianglemesh.h"
+
+
+const float cornerColors[8][3] = {
+    {1.0f, 0.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f},
+    {0.0f, 1.0f, 1.0f},
+    {1.0f, 0.0f, 1.0f},
+    {1.0f, 1.0f, 0.0f},
+    {1.0f, 1.0f, 1.0f},
+    {0.0f, 0.0f, 0.0f}
+};
 
 
 TriangleMesh::TriangleMesh()
@@ -25,6 +42,8 @@ bool TriangleMesh::load(const char *filename)
 	loadFaces(fin);
 	fin.close();
 	cout << "Mesh loaded" << endl << endl;
+
+    cornerTable.buildTable(vTable);
 
 	return true;
 }
@@ -87,6 +106,37 @@ void TriangleMesh::render(bool bWireframe)
 		}
 		glEnd();
 	}
+}
+
+void TriangleMesh::renderCornerColors() {
+
+    std::vector<int> colorIndex(vTable.size(), -1);
+    for (int i = 0; i < (int)vTable.size(); i++) {
+        if (colorIndex[i] >= 0) continue;
+
+        int colori = 0;
+        int corner = i;
+        do {
+            colorIndex[corner] = colori;
+            corner = cornerTable.next(
+                     cornerTable.opposite(
+                     cornerTable.next(corner)));
+            colori = (colori+1)%8;
+        } while (corner != i && corner >= 0);
+    }
+
+    glBegin(GL_TRIANGLES);
+    for(int i = 0; i < (int)vTable.size(); i += 3)
+    {
+        glNormal3fv(&normals[i/3].x);
+        glColor3fv(cornerColors[colorIndex[i]]);
+        glVertex3fv(&vertices[vTable[i]].x);
+        glColor3fv(cornerColors[colorIndex[i+1]]);
+        glVertex3fv(&vertices[vTable[i+1]].x);
+        glColor3fv(cornerColors[colorIndex[i+2]]);
+        glVertex3fv(&vertices[vTable[i+2]].x);
+    }
+    glEnd();
 }
 
 bool TriangleMesh::loadHeader(ifstream &fin)

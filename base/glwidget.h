@@ -16,6 +16,7 @@ private:
 	Camera cam;
 	int initx, inity;
 	bool bWireframe;
+    bool bCornerColors;
 	TriangleMesh *mesh;
 
 public:

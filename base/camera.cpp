@@ -1,5 +1,9 @@
 #include <iostream>
+#ifdef MACOSX
+#include <OpenGL/glu.h>
+#else
 #include <GL/glu.h>
+#endif
 #include "camera.h"
 
 

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui opengl
+QT += core gui opengl
 
 TARGET = Base
 TEMPLATE = app
@@ -25,6 +25,9 @@ HEADERS  += mainwindow.h \
     trianglemesh.h \
     cornertable.h
 
-LIBS += -lGLU
+macx:LIBS += -glu
+!macx:LIBS += -lGLU
 
 FORMS    += mainwindow.ui
+
+macx:DEFINES += MACOSX

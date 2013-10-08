@@ -12,6 +12,7 @@ GLWidget::GLWidget(QWidget *parent) :
 	setFocusPolicy(Qt::StrongFocus);
 	mesh = NULL;
 	bWireframe = false;
+    bCornerColors = false;
 }
 
 
@@ -70,8 +71,12 @@ void GLWidget::paintGL()
 		glDisable(GL_LIGHTING);
 	else
 		glEnable(GL_LIGHTING);
-	if(mesh != NULL)
-		mesh->render(bWireframe);
+    if(mesh != NULL) {
+        if (!bCornerColors)
+            mesh->render(bWireframe);
+        else
+            mesh->renderCornerColors();
+    }
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
@@ -128,5 +133,10 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
 		bWireframe = !bWireframe;
 		updateGL();
 	}
+    if(event->key() == Qt::Key_F2)
+    {
+        bCornerColors = !bCornerColors;
+        updateGL();
+    }
 }
 

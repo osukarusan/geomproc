@@ -22,6 +22,8 @@ public:
 
 private:
 
+    bool checkTable() const;
+
     std::vector<int> vTable;    //vertex table
     std::vector<int> oTable;    //opposites table
 
@@ -29,14 +31,17 @@ private:
 
 
 inline int CornerTable::triangle(int c) const {
+    if (c < 0 || c >= int(vTable.size())) return -1;
     return c/3;
 }
 
 inline int CornerTable::vertex(int c) const {
+    if (c < 0 || c >= int(vTable.size())) return -1;
     return vTable[c];
 }
 
 inline int CornerTable::opposite(int c) const {
+    if (c < 0 || c >= int(oTable.size())) return -1;
     return oTable[c];
 }
 
