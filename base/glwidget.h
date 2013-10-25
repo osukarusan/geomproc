@@ -4,20 +4,29 @@
 
 #include <QGLWidget>
 #include <QMouseEvent>
+#include <QTimer>
 #include "trianglemesh.h"
 #include "camera.h"
+
+
+enum RenderType { RENDER_NORMAL, RENDER_CORNERS, RENDER_CURVATURE, NUM_RENDER_TYPES };
+enum RenderMesh { RENDER_ORIGINAL, RENDER_SMOOTHED, NUM_MESH_TYPES };
 
 
 class GLWidget : public QGLWidget
 {
 	Q_OBJECT
 
+public:
+    RenderType gRendertype;
+    RenderMesh gRendermesh;
+
 private:
 	Camera cam;
 	int initx, inity;
-	bool bWireframe;
-    bool bCornerColors;
+    bool bWireframe;
 	TriangleMesh *mesh;
+    TriangleMesh *smoothMesh;
 
 public:
 	GLWidget(QWidget *parent = 0);
@@ -26,6 +35,8 @@ public:
 	void closeMesh();
 
 	void resetCamera();
+
+    void setSmoothParameters(int numiters, double lambda);
 
 protected:
 	void initializeGL();

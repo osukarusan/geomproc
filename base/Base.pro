@@ -16,18 +16,21 @@ SOURCES += main.cpp\
     camera.cpp \
     bbox.cpp \
     trianglemesh.cpp \
-    cornertable.cpp
+    cornertable.cpp \
+    smoothingdialog.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
     camera.h \
     bbox.h \
     trianglemesh.h \
-    cornertable.h
+    cornertable.h \
+    smoothingdialog.h
 
 macx:LIBS += -glu
 !macx:LIBS += -lGLU
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    smoothingdialog.ui
 
 macx:DEFINES += MACOSX

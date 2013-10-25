@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "smoothingdialog.h"
 
 #ifdef MACOSX
 #define MODELS_DIR "../../../../models"
@@ -14,6 +15,15 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+
+    QActionGroup* rendergroup = new QActionGroup(this);
+    rendergroup->addAction(ui->actionRenderNormal);
+    rendergroup->addAction(ui->actionRenderCorners);
+    rendergroup->addAction(ui->actionRenderCurvature);
+
+    QActionGroup* meshgroup = new QActionGroup(this);
+    meshgroup->addAction(ui->actionRenderOriginal);
+    meshgroup->addAction(ui->actionRenderSmoothed);
 }
 
 MainWindow::~MainWindow()
@@ -47,4 +57,44 @@ void MainWindow::on_actionClose_triggered()
 void MainWindow::on_actionRest_triggered()
 {
 	ui->glwidget->resetCamera();
+}
+
+void MainWindow::on_actionRenderNormal_triggered()
+{
+    ui->glwidget->gRendertype = RENDER_NORMAL;
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionRenderCorners_triggered()
+{
+    ui->glwidget->gRendertype = RENDER_CORNERS;
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionRenderCurvature_triggered()
+{
+    ui->glwidget->gRendertype = RENDER_CURVATURE;
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionRenderOriginal_triggered()
+{
+    ui->glwidget->gRendermesh = RENDER_ORIGINAL;
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionRenderSmoothed_triggered()
+{
+    ui->glwidget->gRendermesh = RENDER_SMOOTHED;
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionSmoothingOptions_triggered()
+{
+    SmoothingDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        ui->glwidget->setSmoothParameters(dialog.getNumIterations(), dialog.getLambda());
+        ui->actionRenderSmoothed->setChecked(true);
+        this->on_actionRenderSmoothed_triggered();
+    }
 }

@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>600</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -46,8 +46,27 @@
     </property>
     <addaction name="actionRest"/>
    </widget>
+   <widget class="QMenu" name="menuRender">
+    <property name="title">
+     <string>Render</string>
+    </property>
+    <addaction name="actionRenderNormal"/>
+    <addaction name="actionRenderCorners"/>
+    <addaction name="actionRenderCurvature"/>
+    <addaction name="separator"/>
+    <addaction name="actionRenderOriginal"/>
+    <addaction name="actionRenderSmoothed"/>
+   </widget>
+   <widget class="QMenu" name="menuSmooth">
+    <property name="title">
+     <string>Smoothing</string>
+    </property>
+    <addaction name="actionSmoothingOptions"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCamera"/>
+   <addaction name="menuRender"/>
+   <addaction name="menuSmooth"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -67,6 +86,65 @@
   <action name="actionRest">
    <property name="text">
     <string>Reset</string>
+   </property>
+  </action>
+  <action name="actionRenderNormal">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Normal</string>
+   </property>
+  </action>
+  <action name="actionRenderCorners">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Corners</string>
+   </property>
+  </action>
+  <action name="actionRenderCurvature">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Curvature</string>
+   </property>
+  </action>
+  <action name="actionSmoothingAnimation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Animate</string>
+   </property>
+  </action>
+  <action name="actionSmoothingOptions">
+   <property name="text">
+    <string>Parameters...</string>
+   </property>
+  </action>
+  <action name="actionRenderOriginal">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Original</string>
+   </property>
+  </action>
+  <action name="actionRenderSmoothed">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Smoothed</string>
    </property>
   </action>
  </widget>

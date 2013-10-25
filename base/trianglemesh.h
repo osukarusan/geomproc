@@ -16,21 +16,21 @@ using namespace glm;
 class TriangleMesh
 {
 
-private:
-	int nVertices, nFaces;
-	vector<vec3> vertices, normals;
-	vector<int> vTable;
-
-    CornerTable cornerTable;
-
 public:
 	TriangleMesh();
 
 	bool load(const char *filename);
 	void free();
+    TriangleMesh* getCopy();
+
 	void getBBox(BBox &bbox);
+
+    TriangleMesh* laplacianSmoothing(int iterations, double lambda);
+    void          computeCurvatures();
+
     void render(bool bWireframe);
     void renderCornerColors();
+    void renderCurvature();
 
 private:
 	bool loadHeader(ifstream &fin);
@@ -39,6 +39,16 @@ private:
 
 	void addTriangle(const int tri[3]);
 	void computeNormalsPerFace();
+
+
+    int nVertices,  nFaces;
+    vector<vec3>    vertices, normals;
+    vector<int>     vTable;
+
+    vector<double>  gaussianCurvature;
+    double          minKg, maxKg;
+
+    CornerTable cornerTable;
 
 };
 

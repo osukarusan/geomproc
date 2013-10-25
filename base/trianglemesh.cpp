@@ -8,6 +8,7 @@
 #include <GL/glu.h>
 #endif
 #include "trianglemesh.h"
+#include <cmath>
 
 
 const float cornerColors[8][3] = {
@@ -52,6 +53,19 @@ void TriangleMesh::free()
 {
 	vertices.clear();
 	normals.clear();
+}
+
+TriangleMesh* TriangleMesh::getCopy()
+{
+    TriangleMesh* res = new TriangleMesh;
+    res->nFaces = this->nFaces;
+    res->nVertices = this->nVertices;
+    res->vertices = this->vertices;
+    res->normals = this->normals;
+    res->vTable = this->vTable;
+    res->cornerTable = this->cornerTable;
+
+    return res;
 }
 
 void TriangleMesh::getBBox(BBox &bbox)
@@ -108,8 +122,8 @@ void TriangleMesh::render(bool bWireframe)
 	}
 }
 
-void TriangleMesh::renderCornerColors() {
-
+void TriangleMesh::renderCornerColors()
+{
     std::vector<int> colorIndex(vTable.size(), -1);
     for (int i = 0; i < (int)vTable.size(); i++) {
         if (colorIndex[i] >= 0) continue;
@@ -138,6 +152,41 @@ void TriangleMesh::renderCornerColors() {
     }
     glEnd();
 }
+
+
+void TriangleMesh::renderCurvature()
+{
+    std::vector<vec3> vcolor(nVertices);
+    for (int i = 0; i < nVertices; i++) {
+        float r, g, b;
+        float t = gaussianCurvature[i];
+        if (t < 0) {
+            r = t/minKg;
+            g = 1.0 - t/minKg;
+            b = 0.0;
+        }
+        else if (t >= 0) {
+            r = 0.0;
+            g = 1.0 - t/maxKg;
+            b = t/maxKg;
+        }
+        vcolor[i] = vec3(r, g, b);
+    }
+
+    glBegin(GL_TRIANGLES);
+    for(int i = 0; i < (int)vTable.size(); i += 3)
+    {
+        glNormal3fv(&normals[i/3].x);
+        glColor3fv(&vcolor[vTable[i]].x);
+        glVertex3fv(&vertices[vTable[i]].x);
+        glColor3fv(&vcolor[vTable[i+1]].x);
+        glVertex3fv(&vertices[vTable[i+1]].x);
+        glColor3fv(&vcolor[vTable[i+2]].x);
+        glVertex3fv(&vertices[vTable[i+2]].x);
+    }
+    glEnd();
+}
+
 
 bool TriangleMesh::loadHeader(ifstream &fin)
 {
@@ -223,4 +272,88 @@ void TriangleMesh::computeNormalsPerFace()
 		normals.push_back(normal);
 	}
 }
+
+void TriangleMesh::computeCurvatures()
+{
+    gaussianCurvature = std::vector<double>(nVertices, 0);
+
+    std::vector<double> angleSum(nVertices, 0);
+    std::vector<double> areaSum (nVertices, 0);
+
+    for (int i = 0; i < (int)vTable.size(); i++) {
+
+        int vid = vTable[i];
+        if (vid < 0) continue;
+
+        // get the neighbor vertices
+        int vi1 = cornerTable.vertex(cornerTable.next(i));
+        int vi2 = cornerTable.vertex(cornerTable.prev(i));
+
+        if (vi1 >= 0 || vi2 >= 0) {
+            // vectors from center to neighbor vertices
+            vec3 v0 = vertices[vid];
+            vec3 v1 = vertices[vi1] - v0;
+            vec3 v2 = vertices[vi2] - v0;
+
+            // sum the area of this corner
+            areaSum[vid] += 0.5*(cross(v1, v2).length());
+
+            // sum the angle of this corner
+            v1 = normalize(v1);
+            v2 = normalize(v2);
+            angleSum[vid] += acos(dot(v1, v2));
+        }
+    }
+
+    for (int i = 0; i < nVertices; i++) {
+        gaussianCurvature[i] = (2.0*M_PI - angleSum[i])/((1.0/3.0)*areaSum[i]);
+    }
+
+    minKg = gaussianCurvature[0];
+    maxKg = gaussianCurvature[0];
+    for (int i = 1; i < nVertices; i++) {
+        minKg = std::min(minKg, gaussianCurvature[i]);
+        maxKg = std::max(maxKg, gaussianCurvature[i]);
+    }
+
+    std::cout << "Kg min = " << minKg << std::endl;
+    std::cout << "Kg max = " << maxKg << std::endl;
+}
+
+TriangleMesh* TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
+
+    // precompute neighbor information
+    std::vector<std::vector<int> > neighbors(nVertices);
+    for (int i = 0; i < (int)vTable.size(); i++) {
+        int vi  = cornerTable.vertex(i);
+        int vij = cornerTable.vertex(cornerTable.next(i));
+        neighbors[vi].push_back(vij);
+    }
+
+    std::vector<vec3> v = this->vertices;
+    for (int iter = 0; iter < iterations; iter++) {
+
+        // L(v_i) = 1/N*Sum(v_ij) - v_i
+        std::vector<vec3> laplacian(nVertices);
+        for (int i = 0; i < nVertices; i++) {
+            vec3 sum(0,0,0);
+            for (int j = 0; j < (int)neighbors[i].size(); j++) {
+                sum += v[neighbors[i][j]];
+            }
+            laplacian[i] = sum/float(neighbors[i].size()) - v[i];
+        }
+
+        // v_i' = v_i + lambda * L(v_i)
+        for (int i = 0; i < nVertices; i++) {
+            v[i] = v[i] + float(lambda)*laplacian[i];
+        }
+    }
+
+    TriangleMesh* res = this->getCopy();
+    res->vertices = v;
+    res->computeNormalsPerFace();
+    res->computeCurvatures();
+    return res;
+}
+
 

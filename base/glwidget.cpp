@@ -11,8 +11,10 @@ GLWidget::GLWidget(QWidget *parent) :
 {
 	setFocusPolicy(Qt::StrongFocus);
 	mesh = NULL;
-	bWireframe = false;
-    bCornerColors = false;
+    smoothMesh = NULL;
+    bWireframe = false;
+    gRendertype = RENDER_NORMAL;
+    gRendermesh = RENDER_ORIGINAL;
 }
 
 
@@ -20,10 +22,11 @@ bool GLWidget::loadMesh(const QString &filename)
 {
 	if(mesh != NULL)
 		closeMesh();
-	mesh = new TriangleMesh();
+    mesh = new TriangleMesh();
 
 	if(mesh->load(filename.toAscii().data()))
-	{
+    {
+        mesh->computeCurvatures();
 		resetCamera();
 		bWireframe = false;
 		return true;
@@ -34,8 +37,14 @@ bool GLWidget::loadMesh(const QString &filename)
 
 void GLWidget::closeMesh()
 {
-	delete mesh;
-	mesh = NULL;
+    if (mesh) {
+        delete mesh;
+        mesh = NULL;
+    }
+    if (smoothMesh) {
+        delete smoothMesh;
+        smoothMesh = NULL;
+    }
 }
 
 void GLWidget::resetCamera()
@@ -71,11 +80,28 @@ void GLWidget::paintGL()
 		glDisable(GL_LIGHTING);
 	else
 		glEnable(GL_LIGHTING);
-    if(mesh != NULL) {
-        if (!bCornerColors)
-            mesh->render(bWireframe);
-        else
-            mesh->renderCornerColors();
+
+    TriangleMesh* renderMesh;
+    switch (gRendermesh) {
+        case RENDER_ORIGINAL:   renderMesh = mesh; break;
+        case RENDER_SMOOTHED:   renderMesh = smoothMesh; break;
+        default:                renderMesh = mesh; break;
+    }
+
+    if(renderMesh != NULL) {
+        switch (gRendertype) {
+            case RENDER_NORMAL:
+                renderMesh->render(bWireframe);
+                break;
+            case RENDER_CORNERS:
+                renderMesh->renderCornerColors();
+                break;
+            case RENDER_CURVATURE:
+                renderMesh->renderCurvature();
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -132,11 +158,14 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
 	{
 		bWireframe = !bWireframe;
 		updateGL();
-	}
-    if(event->key() == Qt::Key_F2)
-    {
-        bCornerColors = !bCornerColors;
-        updateGL();
     }
 }
 
+void GLWidget::setSmoothParameters(int numiters, double lambda) {
+    if (!mesh) return;
+    if (smoothMesh)
+        delete smoothMesh;
+
+    smoothMesh = mesh->laplacianSmoothing(numiters, lambda);
+    this->updateGL();
+}
