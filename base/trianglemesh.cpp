@@ -159,7 +159,7 @@ void TriangleMesh::renderCurvature()
     std::vector<vec3> vcolor(nVertices);
     for (int i = 0; i < nVertices; i++) {
         float r, g, b;
-        float t = gaussianCurvature[i];
+        float t = 100*gaussianCurvature[i];
         if (t < 0) {
             r = t/minKg;
             g = 1.0 - t/minKg;
@@ -305,6 +305,7 @@ void TriangleMesh::computeCurvatures()
         }
     }
 
+    // Kg = (2*pi - Sum(alpha))/(1/3 * Sum(area))
     for (int i = 0; i < nVertices; i++) {
         gaussianCurvature[i] = (2.0*M_PI - angleSum[i])/((1.0/3.0)*areaSum[i]);
     }

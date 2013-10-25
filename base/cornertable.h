@@ -50,7 +50,7 @@ inline int CornerTable::next(int c) const {
 }
 
 inline int CornerTable::prev(int c) const {
-    return (c - 1)%3 + 3*triangle(c);
+    return (c + 2)%3 + 3*triangle(c);
 }
 
 
