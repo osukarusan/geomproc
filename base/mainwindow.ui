@@ -56,17 +56,19 @@
     <addaction name="separator"/>
     <addaction name="actionRenderOriginal"/>
     <addaction name="actionRenderSmoothed"/>
+    <addaction name="actionRenderCollapsed"/>
    </widget>
-   <widget class="QMenu" name="menuSmooth">
+   <widget class="QMenu" name="menuOperations">
     <property name="title">
-     <string>Smoothing</string>
+     <string>Operations</string>
     </property>
-    <addaction name="actionSmoothingOptions"/>
+    <addaction name="actionSmooth"/>
+    <addaction name="actionEdgeCollapse"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCamera"/>
    <addaction name="menuRender"/>
-   <addaction name="menuSmooth"/>
+   <addaction name="menuOperations"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -115,17 +117,9 @@
     <string>Curvature</string>
    </property>
   </action>
-  <action name="actionSmoothingAnimation">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
+  <action name="actionSmooth">
    <property name="text">
-    <string>Animate</string>
-   </property>
-  </action>
-  <action name="actionSmoothingOptions">
-   <property name="text">
-    <string>Parameters...</string>
+    <string>Smooth...</string>
    </property>
   </action>
   <action name="actionRenderOriginal">
@@ -145,6 +139,19 @@
    </property>
    <property name="text">
     <string>Smoothed</string>
+   </property>
+  </action>
+  <action name="actionRenderCollapsed">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Collapsed</string>
+   </property>
+  </action>
+  <action name="actionEdgeCollapse">
+   <property name="text">
+    <string>Edge collapse...</string>
    </property>
   </action>
  </widget>

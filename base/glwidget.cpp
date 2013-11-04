@@ -12,6 +12,7 @@ GLWidget::GLWidget(QWidget *parent) :
 	setFocusPolicy(Qt::StrongFocus);
 	mesh = NULL;
     smoothMesh = NULL;
+    collapsedMesh = NULL;
     bWireframe = false;
     gRendertype = RENDER_NORMAL;
     gRendermesh = RENDER_ORIGINAL;
@@ -44,6 +45,10 @@ void GLWidget::closeMesh()
     if (smoothMesh) {
         delete smoothMesh;
         smoothMesh = NULL;
+    }
+    if (collapsedMesh) {
+        delete collapsedMesh;
+        collapsedMesh = NULL;
     }
 }
 
@@ -85,6 +90,7 @@ void GLWidget::paintGL()
     switch (gRendermesh) {
         case RENDER_ORIGINAL:   renderMesh = mesh; break;
         case RENDER_SMOOTHED:   renderMesh = smoothMesh; break;
+        case RENDER_COLLAPSED:  renderMesh = collapsedMesh; break;
         default:                renderMesh = mesh; break;
     }
 
@@ -166,6 +172,17 @@ void GLWidget::setSmoothParameters(int numiters, double lambda) {
     if (smoothMesh)
         delete smoothMesh;
 
-    smoothMesh = mesh->laplacianSmoothing(numiters, lambda);
+    smoothMesh = mesh->getCopy();
+    smoothMesh->laplacianSmoothing(numiters, lambda);
+    this->updateGL();
+}
+
+void GLWidget::setCollapseParameters(int numiters, double threshold) {
+    if (!mesh) return;
+    if (collapsedMesh)
+        delete collapsedMesh;
+
+    collapsedMesh = mesh->getCopy();
+    collapsedMesh->edgeCollapse(numiters, threshold);
     this->updateGL();
 }

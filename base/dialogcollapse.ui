@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SmoothingDialog</class>
- <widget class="QDialog" name="SmoothingDialog">
+ <class>DialogCollapse</class>
+ <widget class="QDialog" name="DialogCollapse">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
-    <height>157</height>
+    <width>300</width>
+    <height>150</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,15 +29,9 @@
         <bool>true</bool>
        </property>
        <property name="minimum">
-        <number>0</number>
+        <number>1</number>
        </property>
        <property name="maximum">
-        <number>1000</number>
-       </property>
-       <property name="singleStep">
-        <number>10</number>
-       </property>
-       <property name="value">
         <number>100</number>
        </property>
       </widget>
@@ -47,25 +41,28 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QLabel" name="label_2">
+      <widget class="QLabel" name="label2">
        <property name="text">
-        <string>Lambda:</string>
+        <string>Edge threshold (%):</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="sb_lambda">
+      <widget class="QDoubleSpinBox" name="sb_threshold">
        <property name="accelerated">
         <bool>true</bool>
        </property>
+       <property name="decimals">
+        <number>1</number>
+       </property>
        <property name="maximum">
-        <double>1.000000000000000</double>
+        <double>100.000000000000000</double>
        </property>
        <property name="singleStep">
-        <double>0.100000000000000</double>
+        <double>0.500000000000000</double>
        </property>
        <property name="value">
-        <double>1.000000000000000</double>
+        <double>0.500000000000000</double>
        </property>
       </widget>
      </item>
@@ -79,7 +76,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>18</height>
+       <height>9</height>
       </size>
      </property>
     </spacer>
@@ -101,7 +98,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>SmoothingDialog</receiver>
+   <receiver>DialogCollapse</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -117,7 +114,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>SmoothingDialog</receiver>
+   <receiver>DialogCollapse</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

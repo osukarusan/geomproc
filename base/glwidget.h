@@ -10,7 +10,7 @@
 
 
 enum RenderType { RENDER_NORMAL, RENDER_CORNERS, RENDER_CURVATURE, NUM_RENDER_TYPES };
-enum RenderMesh { RENDER_ORIGINAL, RENDER_SMOOTHED, NUM_MESH_TYPES };
+enum RenderMesh { RENDER_ORIGINAL, RENDER_SMOOTHED, RENDER_COLLAPSED, NUM_MESH_TYPES };
 
 
 class GLWidget : public QGLWidget
@@ -27,6 +27,7 @@ private:
     bool bWireframe;
 	TriangleMesh *mesh;
     TriangleMesh *smoothMesh;
+    TriangleMesh *collapsedMesh;
 
 public:
 	GLWidget(QWidget *parent = 0);
@@ -37,6 +38,7 @@ public:
 	void resetCamera();
 
     void setSmoothParameters(int numiters, double lambda);
+    void setCollapseParameters(int numiters, double threshold);
 
 protected:
 	void initializeGL();

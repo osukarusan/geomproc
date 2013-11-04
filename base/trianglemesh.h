@@ -25,8 +25,9 @@ public:
 
 	void getBBox(BBox &bbox);
 
-    TriangleMesh* laplacianSmoothing(int iterations, double lambda);
-    void          computeCurvatures();
+    void computeCurvatures();
+    void laplacianSmoothing(int iterations, double lambda);
+    void edgeCollapse(int iterations, double threshold);
 
     void render(bool bWireframe);
     void renderCornerColors();

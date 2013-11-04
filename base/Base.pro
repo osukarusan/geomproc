@@ -17,7 +17,8 @@ SOURCES += main.cpp\
     bbox.cpp \
     trianglemesh.cpp \
     cornertable.cpp \
-    smoothingdialog.cpp
+    dialogcollapse.cpp \
+    dialogsmoothing.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -25,12 +26,14 @@ HEADERS  += mainwindow.h \
     bbox.h \
     trianglemesh.h \
     cornertable.h \
-    smoothingdialog.h
+    dialogcollapse.h \
+    dialogsmoothing.h
 
 macx:LIBS += -glu
 !macx:LIBS += -lGLU
 
 FORMS    += mainwindow.ui \
-    smoothingdialog.ui
+    dialogcollapse.ui \
+    dialogsmoothing.ui
 
 macx:DEFINES += MACOSX

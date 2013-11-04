@@ -2,7 +2,8 @@
 #include <QMessageBox>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "smoothingdialog.h"
+#include "dialogsmoothing.h"
+#include "dialogcollapse.h"
 
 #ifdef MACOSX
 #define MODELS_DIR "../../../../models"
@@ -24,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QActionGroup* meshgroup = new QActionGroup(this);
     meshgroup->addAction(ui->actionRenderOriginal);
     meshgroup->addAction(ui->actionRenderSmoothed);
+    meshgroup->addAction(ui->actionRenderCollapsed);
 }
 
 MainWindow::~MainWindow()
@@ -89,12 +91,28 @@ void MainWindow::on_actionRenderSmoothed_triggered()
     ui->glwidget->updateGL();
 }
 
-void MainWindow::on_actionSmoothingOptions_triggered()
+void MainWindow::on_actionRenderCollapsed_triggered()
 {
-    SmoothingDialog dialog(this);
+    ui->glwidget->gRendermesh = RENDER_COLLAPSED;
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionSmooth_triggered()
+{
+    DialogSmoothing dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
         ui->glwidget->setSmoothParameters(dialog.getNumIterations(), dialog.getLambda());
         ui->actionRenderSmoothed->setChecked(true);
         this->on_actionRenderSmoothed_triggered();
+    }
+}
+
+void MainWindow::on_actionEdgeCollapse_triggered()
+{
+    DialogCollapse dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        ui->glwidget->setCollapseParameters(dialog.getNumIterations(), dialog.getThreshold());
+        ui->actionRenderCollapsed->setChecked(true);
+        this->on_actionRenderCollapsed_triggered();
     }
 }

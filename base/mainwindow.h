@@ -29,8 +29,10 @@ private slots:
     void on_actionRenderCurvature_triggered();
     void on_actionRenderOriginal_triggered();
     void on_actionRenderSmoothed_triggered();
+    void on_actionRenderCollapsed_triggered();
 
-    void on_actionSmoothingOptions_triggered();
+    void on_actionSmooth_triggered();
+    void on_actionEdgeCollapse_triggered();
 
 private:
 	Ui::MainWindow *ui;

@@ -30,7 +30,6 @@ vec3 BBox::getCenter() const
 float BBox::getCircumRadius() const
 {
 	vec3 size = limits[1] - limits[0];
-
 	return length(size) / 2.f;
 }
 

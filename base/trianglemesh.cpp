@@ -64,7 +64,6 @@ TriangleMesh* TriangleMesh::getCopy()
     res->normals = this->normals;
     res->vTable = this->vTable;
     res->cornerTable = this->cornerTable;
-
     return res;
 }
 
@@ -88,14 +87,14 @@ void TriangleMesh::render(bool bWireframe)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	if(bWireframe)
 	{
-		glPolygonOffset(1, 1);
+        glPolygonOffset(10, 10);
 		glEnable(GL_POLYGON_OFFSET_FILL);
 		glColor3f(1.f, 1.f, 1.f);
 	}
 	else
 	{
 		glColor3f(0.7f, 0.7f, 0.9f);
-	}
+    }
 	glBegin(GL_TRIANGLES);
 	for(i=0; i<(int)vTable.size(); i+=3)
 	{
@@ -104,7 +103,7 @@ void TriangleMesh::render(bool bWireframe)
 		glVertex3fv(&vertices[vTable[i+1]].x);
 		glVertex3fv(&vertices[vTable[i+2]].x);
 	}
-	glEnd();
+    glEnd();
 	if(bWireframe)
 	{
 		glDisable(GL_POLYGON_OFFSET_FILL);
@@ -132,9 +131,7 @@ void TriangleMesh::renderCornerColors()
         int corner = i;
         do {
             colorIndex[corner] = colori;
-            corner = cornerTable.next(
-                     cornerTable.opposite(
-                     cornerTable.next(corner)));
+            corner = cornerTable.clockwise(corner);
             colori = (colori+1)%8;
         } while (corner != i && corner >= 0);
     }
@@ -257,17 +254,21 @@ void TriangleMesh::addTriangle(const int tri[3])
 	vTable.push_back(tri[2]);
 }
 
+
+
 void TriangleMesh::computeNormalsPerFace()
 {
 	unsigned int i;
 	vec3 normal;
+    normals.clear();
 
 	for(i=0; i<vTable.size(); i+=3)
 	{
-		normal = cross(vertices[vTable[i+1]] - vertices[vTable[i]], vertices[vTable[i+2]] - vertices[vTable[i]]);
-		if(length(normal) < 1e-5)
-			normal = vec3(0.f, 0.f, 0.f);
-		else
+        normal = cross(vertices[vTable[i+1]] - vertices[vTable[i]],
+                       vertices[vTable[i+2]] - vertices[vTable[i]]);
+        if(length(normal) < 1e-5)
+            normal = vec3(0.f, 0.f, 0.f);
+        else
 			normal = normalize(normal);
 		normals.push_back(normal);
 	}
@@ -319,9 +320,10 @@ void TriangleMesh::computeCurvatures()
 
     std::cout << "Kg min = " << minKg << std::endl;
     std::cout << "Kg max = " << maxKg << std::endl;
+
 }
 
-TriangleMesh* TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
+void TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
 
     // precompute neighbor information
     std::vector<std::vector<int> > neighbors(nVertices);
@@ -331,7 +333,8 @@ TriangleMesh* TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
         neighbors[vi].push_back(vij);
     }
 
-    std::vector<vec3> v = this->vertices;
+    // smoothing
+    std::vector<vec3>& v = vertices;
     for (int iter = 0; iter < iterations; iter++) {
 
         // L(v_i) = 1/N*Sum(v_ij) - v_i
@@ -349,12 +352,128 @@ TriangleMesh* TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
             v[i] = v[i] + float(lambda)*laplacian[i];
         }
     }
-
-    TriangleMesh* res = this->getCopy();
-    res->vertices = v;
-    res->computeNormalsPerFace();
-    res->computeCurvatures();
-    return res;
+    computeNormalsPerFace();
+    computeCurvatures();
 }
 
+
+void TriangleMesh::edgeCollapse(int iterations, double threshold) {
+
+    BBox bbox;
+    this->getBBox(bbox);
+    double tlen = 2*threshold*bbox.getCircumRadius();
+
+    for (int iter = 0; iter < iterations; iter++) {
+
+        std::vector<bool> validVertex(nVertices, true);
+        std::vector<bool> validTriangle( nFaces, true);
+        int finalFaces = nFaces;
+
+        // for each corner/edge
+        for (int i = 0; i < (int)vTable.size(); i++) {
+
+            // get edge information
+            int ci = i;                         // corner ini
+            int cf = cornerTable.next(ci);      // corner final
+            int cl = cornerTable.prev(ci);      // corner at edge left side
+            int cr = cornerTable.opposite(cl);  // corner at edge right side
+            int vi = cornerTable.vertex(ci);
+            int vf = cornerTable.vertex(cf);
+            int tl = cornerTable.triangle(cl);
+            int tr = cornerTable.triangle(cr);
+
+            // check both vertices and corners are still valid
+            if (   !validVertex[vi]   || !validVertex[vf]
+                || !validTriangle[tl] || !validTriangle[tr])
+                continue;
+
+            // collapse only edges smaller than threshold
+            if (length(vertices[vi] - vertices[vf]) > tlen)
+                continue;
+
+            // if final opposite vertices are the same, do not collapse
+            int crp  = cornerTable.prev(cr);
+            int crn  = cornerTable.next(cr);
+            int cio1 = cornerTable.opposite(ci);
+            int cfo1 = cornerTable.opposite(cf);
+            int cio2 = cornerTable.opposite(crp);
+            int cfo2 = cornerTable.opposite(crn);
+            if (   cornerTable.vertex(cio1) == cornerTable.vertex(cfo1)
+                || cornerTable.vertex(cio2) == cornerTable.vertex(cfo2))
+                continue;
+
+            // if face normals would invert, do not collapse
+            bool inversion = true;
+            int corner = cornerTable.clockwise(ci);
+            int lastci = cornerTable.counterclockwise(ci);
+            do {
+                vec3 vcn = vertices[cornerTable.vertex(cornerTable.next(corner))];
+                vec3 vcp = vertices[cornerTable.vertex(cornerTable.prev(corner))];
+                vec3 nb = cross(vcn - vertices[vi], vcp - vertices[vi]);
+                vec3 na = cross(vcn - vertices[vf], vcp - vertices[vf]);
+                inversion = dot(nb, na) < 0;
+                corner = cornerTable.clockwise(corner);
+            } while (!inversion && corner != lastci && corner >= 0);
+            if (inversion)
+                continue;
+
+            // update vtable
+            std::vector<int>& vtable = cornerTable.getVTable();
+            corner = ci;
+            do {
+                vTable[corner] = vf;
+                vtable[corner] = vf;
+                corner = cornerTable.clockwise(corner);
+            } while (corner != ci && corner >= 0);
+
+            // update otable
+            std::vector<int>& otable = cornerTable.getOTable();
+            otable[cio1] = cfo1;
+            otable[cfo1] = cio1;
+            otable[cio2] = cfo2;
+            otable[cfo2] = cio2;
+
+            // mark vertex and corners as invalid
+            validVertex  [vi] = false;
+            validTriangle[tl] = false;
+            validTriangle[tr] = false;
+            finalFaces -= 2;
+        }
+
+        // final cleanup
+        std::vector<int> vertmap(nVertices, -1);
+        nVertices = 0;
+        for (int i = 0; i < (int)validVertex.size(); i++) {
+            if (validVertex[i]) {
+                vertmap[i] = nVertices;
+                nVertices++;
+            }
+            else {
+                vertices.erase(vertices.begin() + nVertices);
+            }
+        }
+
+        std::vector<int> newfaces(3*finalFaces, -1);
+        int fid = 0;
+        for (int i = 0; i < (int)vTable.size(); i += 3) {
+            if (validTriangle[i/3]) {
+                newfaces[fid++] = vertmap[vTable[i    ]];
+                newfaces[fid++] = vertmap[vTable[i + 1]];
+                newfaces[fid++] = vertmap[vTable[i + 2]];
+            }
+        }
+        vTable = newfaces;
+        nFaces = finalFaces;
+
+        cornerTable.buildTable(vTable);
+
+        std::cout << "Verts = " << nVertices << std::endl;
+        std::cout << "Faces = " << nFaces << std::endl;
+
+    }
+
+    computeNormalsPerFace();
+    computeCurvatures();
+
+}
 

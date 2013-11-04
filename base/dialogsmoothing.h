@@ -4,22 +4,22 @@
 #include <QDialog>
 
 namespace Ui {
-class SmoothingDialog;
+class DialogSmoothing;
 }
 
-class SmoothingDialog : public QDialog
+class DialogSmoothing : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit SmoothingDialog(QWidget *parent = 0);
-    ~SmoothingDialog();
+    explicit DialogSmoothing(QWidget *parent = 0);
+    ~DialogSmoothing();
 
     int getNumIterations();
     double getLambda();
 
 private:
-    Ui::SmoothingDialog *ui;
+    Ui::DialogSmoothing *ui;
 };
 
 

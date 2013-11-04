@@ -20,6 +20,12 @@ public:
     int next(int corner) const;
     int prev(int corner) const;
 
+    int clockwise(int corner) const;
+    int counterclockwise(int corner) const;
+
+    std::vector<int>& getVTable();
+    std::vector<int>& getOTable();
+
 private:
 
     bool checkTable() const;
@@ -51,6 +57,22 @@ inline int CornerTable::next(int c) const {
 
 inline int CornerTable::prev(int c) const {
     return (c + 2)%3 + 3*triangle(c);
+}
+
+inline int CornerTable::clockwise(int c) const {
+    return next(opposite(next(c)));
+}
+
+inline int CornerTable::counterclockwise(int c) const {
+    return prev(opposite(prev(c)));
+}
+
+inline std::vector<int>& CornerTable::getVTable() {
+    return vTable;
+}
+
+inline std::vector<int>& CornerTable::getOTable() {
+    return oTable;
 }
 
 
