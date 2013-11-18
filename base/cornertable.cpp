@@ -44,6 +44,16 @@ void CornerTable::buildTable(const std::vector<int>& tris)
     }
 }
 
+int CornerTable::valence(int corner) const {
+    int v = 0;
+    int c = corner;
+    do {
+        v++;
+        c = clockwise(c);
+    } while (c >= 0 && c != corner);
+    return v;
+}
+
 bool CornerTable::checkTable() const {
     for (int c = 0; c < int(vTable.size()); c++) {
         if (opposite(c) != -1 && opposite(opposite(c)) != c) return false;

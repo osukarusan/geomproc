@@ -9,6 +9,7 @@
 #endif
 #include "trianglemesh.h"
 #include <cmath>
+#include <queue>
 
 
 const float cornerColors[8][3] = {
@@ -80,45 +81,17 @@ void TriangleMesh::getBBox(BBox &bbox)
 	}
 }
 
-void TriangleMesh::render(bool bWireframe)
+void TriangleMesh::renderNormal()
 {
-	int i;
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	if(bWireframe)
-	{
-        glPolygonOffset(10, 10);
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		glColor3f(1.f, 1.f, 1.f);
-	}
-	else
-	{
-		glColor3f(0.7f, 0.7f, 0.9f);
+    glBegin(GL_TRIANGLES);
+    for(int i = 0; i < (int)vTable.size(); i += 3)
+    {
+        glNormal3fv(&normals[i/3].x);
+        glVertex3fv(&vertices[vTable[i]].x);
+        glVertex3fv(&vertices[vTable[i+1]].x);
+        glVertex3fv(&vertices[vTable[i+2]].x);
     }
-	glBegin(GL_TRIANGLES);
-	for(i=0; i<(int)vTable.size(); i+=3)
-	{
-		glNormal3fv(&normals[i/3].x);
-		glVertex3fv(&vertices[vTable[i]].x);
-		glVertex3fv(&vertices[vTable[i+1]].x);
-		glVertex3fv(&vertices[vTable[i+2]].x);
-	}
     glEnd();
-	if(bWireframe)
-	{
-		glDisable(GL_POLYGON_OFFSET_FILL);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glColor3f(0.f, 0.f, 0.f);
-		glBegin(GL_TRIANGLES);
-		for(i=0; i<(int)vTable.size(); i+=3)
-		{
-			glNormal3fv(&normals[i/3].x);
-			glVertex3fv(&vertices[vTable[i]].x);
-			glVertex3fv(&vertices[vTable[i+1]].x);
-			glVertex3fv(&vertices[vTable[i+2]].x);
-		}
-		glEnd();
-	}
 }
 
 void TriangleMesh::renderCornerColors()
@@ -150,6 +123,33 @@ void TriangleMesh::renderCornerColors()
     glEnd();
 }
 
+void TriangleMesh::renderVertexValence()
+{
+    std::vector<int> valence(nVertices, 0);
+    for (int i = 0; i < (int)vTable.size(); i++) {
+        int vid = cornerTable.vertex(i);
+        if (!valence[vid]) {
+            valence[vid] = cornerTable.valence(i);
+            if (valence[vid] < 4)
+                valence[vid] = 0;
+            else
+                valence[vid] = 1;
+        }
+    }
+
+    glBegin(GL_TRIANGLES);
+    for(int i = 0; i < (int)vTable.size(); i += 3)
+    {
+        glNormal3fv(&normals[i/3].x);
+        glColor3fv(cornerColors[valence[cornerTable.vertex(i)]%8]);
+        glVertex3fv(&vertices[vTable[i]].x);
+        glColor3fv(cornerColors[valence[cornerTable.vertex(i+1)]%8]);
+        glVertex3fv(&vertices[vTable[i+1]].x);
+        glColor3fv(cornerColors[valence[cornerTable.vertex(i+2)]%8]);
+        glVertex3fv(&vertices[vTable[i+2]].x);
+    }
+    glEnd();
+}
 
 void TriangleMesh::renderCurvature()
 {
@@ -296,13 +296,15 @@ void TriangleMesh::computeCurvatures()
             vec3 v1 = vertices[vi1] - v0;
             vec3 v2 = vertices[vi2] - v0;
 
-            // sum the area of this corner
-            areaSum[vid] += 0.5*(cross(v1, v2).length());
+            if (length(v1) > 1e-5 && length(v2) > 1e-5) {
+                // sum the area of this corner
+                areaSum[vid] += 0.5*(cross(v1, v2).length());
 
-            // sum the angle of this corner
-            v1 = normalize(v1);
-            v2 = normalize(v2);
-            angleSum[vid] += acos(dot(v1, v2));
+                // sum the angle of this corner
+                v1 = normalize(v1);
+                v2 = normalize(v2);
+                angleSum[vid] += acos(dot(v1, v2));
+            }
         }
     }
 
@@ -357,23 +359,41 @@ void TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
 }
 
 
-void TriangleMesh::edgeCollapse(int iterations, double threshold) {
+void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollapses) {
 
     BBox bbox;
     this->getBBox(bbox);
     double tlen = 2*threshold*bbox.getCircumRadius();
+    if (maxCollapses < 0) maxCollapses = vTable.size();
 
     for (int iter = 0; iter < iterations; iter++) {
 
         std::vector<bool> validVertex(nVertices, true);
         std::vector<bool> validTriangle( nFaces, true);
         int finalFaces = nFaces;
+        int collapses  = 0;
 
-        // for each corner/edge
+        // priorize edges from smallest to largest
+        std::priority_queue<std::pair<float, int> > PQ;
         for (int i = 0; i < (int)vTable.size(); i++) {
+            int vi = cornerTable.vertex(i);
+            int vf = cornerTable.vertex(cornerTable.next(i));
+            // collapse only edges smaller than threshold
+            float elen = length(vertices[vi] - vertices[vf]);
+            if (elen <= tlen) {
+                PQ.push(std::pair<float, int>(-elen, i));
+            }
+        }
+
+        // for each edge in the priority queue
+        while (PQ.size() && collapses < maxCollapses) {
+
+            // remove top
+            std::pair<float, int> pqi = PQ.top();
+            PQ.pop();
 
             // get edge information
-            int ci = i;                         // corner ini
+            int ci = pqi.second;                // corner ini
             int cf = cornerTable.next(ci);      // corner final
             int cl = cornerTable.prev(ci);      // corner at edge left side
             int cr = cornerTable.opposite(cl);  // corner at edge right side
@@ -389,6 +409,10 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold) {
 
             // collapse only edges smaller than threshold
             if (length(vertices[vi] - vertices[vf]) > tlen)
+                continue;
+
+            // if vertex valence is 3 or less, do not collapse
+            if (cornerTable.valence(cl) < 4 || cornerTable.valence(cr) < 4)
                 continue;
 
             // if final opposite vertices are the same, do not collapse
@@ -411,7 +435,7 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold) {
                 vec3 vcp = vertices[cornerTable.vertex(cornerTable.prev(corner))];
                 vec3 nb = cross(vcn - vertices[vi], vcp - vertices[vi]);
                 vec3 na = cross(vcn - vertices[vf], vcp - vertices[vf]);
-                inversion = dot(nb, na) < 0;
+                inversion = dot(nb, na) < 0 || length(nb) < 1e-5 || length(na) < 1e-5;
                 corner = cornerTable.clockwise(corner);
             } while (!inversion && corner != lastci && corner >= 0);
             if (inversion)
@@ -438,30 +462,40 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold) {
             validTriangle[tl] = false;
             validTriangle[tr] = false;
             finalFaces -= 2;
+            collapses++;
         }
 
         // final cleanup
-        std::vector<int> vertmap(nVertices, -1);
+        std::vector<int> vertmap(nVertices, -2);
         nVertices = 0;
         for (int i = 0; i < (int)validVertex.size(); i++) {
-            if (validVertex[i]) {
-                vertmap[i] = nVertices;
-                nVertices++;
-            }
-            else {
+            if (validVertex[i])
+                vertmap[i] = nVertices++;
+            else
                 vertices.erase(vertices.begin() + nVertices);
-            }
         }
 
         std::vector<int> newfaces(3*finalFaces, -1);
         int fid = 0;
         for (int i = 0; i < (int)vTable.size(); i += 3) {
             if (validTriangle[i/3]) {
-                newfaces[fid++] = vertmap[vTable[i    ]];
-                newfaces[fid++] = vertmap[vTable[i + 1]];
-                newfaces[fid++] = vertmap[vTable[i + 2]];
+                if (vertmap[vTable[i]] >= 0 &&
+                    vertmap[vTable[i+1]] >= 0 &&
+                    vertmap[vTable[i+2]] >= 0)
+                {
+                    newfaces[fid    ] = vertmap[vTable[i    ]];
+                    newfaces[fid + 1] = vertmap[vTable[i + 1]];
+                    newfaces[fid + 2] = vertmap[vTable[i + 2]];
+                    fid += 3;
+                }
+                else
+                {
+                    finalFaces--;
+                    newfaces.resize(3*finalFaces);
+                }
             }
         }
+
         vTable = newfaces;
         nFaces = finalFaces;
 
@@ -469,7 +503,6 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold) {
 
         std::cout << "Verts = " << nVertices << std::endl;
         std::cout << "Faces = " << nFaces << std::endl;
-
     }
 
     computeNormalsPerFace();

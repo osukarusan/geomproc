@@ -18,6 +18,11 @@ int DialogCollapse::getNumIterations()
     return ui->sb_iters->value();
 }
 
+int DialogCollapse::getNumCollapses()
+{
+    return ui->sb_collapses->value();
+}
+
 double DialogCollapse::getThreshold()
 {
     return 0.01*ui->sb_threshold->value();

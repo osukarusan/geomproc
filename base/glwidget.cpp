@@ -95,9 +95,25 @@ void GLWidget::paintGL()
     }
 
     if(renderMesh != NULL) {
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        if (bWireframe) {
+            glPolygonOffset(10, 10);
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            glColor3f(1.f, 1.f, 1.f);
+            renderMesh->renderNormal();
+            glDisable(GL_POLYGON_OFFSET_FILL);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+
         switch (gRendertype) {
             case RENDER_NORMAL:
-                renderMesh->render(bWireframe);
+                if (bWireframe) glColor3f(0.0f, 0.0f, 0.0f);
+                else            glColor3f(0.7f, 0.7f, 0.9f);
+                renderMesh->renderNormal();
+                break;
+            case RENDER_VALENCE:
+                renderMesh->renderVertexValence();
                 break;
             case RENDER_CORNERS:
                 renderMesh->renderCornerColors();
@@ -177,12 +193,12 @@ void GLWidget::setSmoothParameters(int numiters, double lambda) {
     this->updateGL();
 }
 
-void GLWidget::setCollapseParameters(int numiters, double threshold) {
+void GLWidget::setCollapseParameters(int numiters, double threshold, int collapses) {
     if (!mesh) return;
     if (collapsedMesh)
         delete collapsedMesh;
 
     collapsedMesh = mesh->getCopy();
-    collapsedMesh->edgeCollapse(numiters, threshold);
+    collapsedMesh->edgeCollapse(numiters, threshold, collapses);
     this->updateGL();
 }

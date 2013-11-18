@@ -52,6 +52,7 @@
     </property>
     <addaction name="actionRenderNormal"/>
     <addaction name="actionRenderCorners"/>
+    <addaction name="actionRenderValence"/>
     <addaction name="actionRenderCurvature"/>
     <addaction name="separator"/>
     <addaction name="actionRenderOriginal"/>
@@ -152,6 +153,14 @@
   <action name="actionEdgeCollapse">
    <property name="text">
     <string>Edge collapse...</string>
+   </property>
+  </action>
+  <action name="actionRenderValence">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Valence</string>
    </property>
   </action>
  </widget>

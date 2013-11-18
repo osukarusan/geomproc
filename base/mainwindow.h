@@ -25,6 +25,7 @@ private slots:
 	void on_actionRest_triggered();
 
     void on_actionRenderNormal_triggered();
+    void on_actionRenderValence_triggered();
     void on_actionRenderCorners_triggered();
     void on_actionRenderCurvature_triggered();
     void on_actionRenderOriginal_triggered();

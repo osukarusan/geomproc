@@ -9,7 +9,7 @@
 #include "camera.h"
 
 
-enum RenderType { RENDER_NORMAL, RENDER_CORNERS, RENDER_CURVATURE, NUM_RENDER_TYPES };
+enum RenderType { RENDER_NORMAL, RENDER_VALENCE, RENDER_CORNERS, RENDER_CURVATURE, NUM_RENDER_TYPES };
 enum RenderMesh { RENDER_ORIGINAL, RENDER_SMOOTHED, RENDER_COLLAPSED, NUM_MESH_TYPES };
 
 
@@ -38,7 +38,7 @@ public:
 	void resetCamera();
 
     void setSmoothParameters(int numiters, double lambda);
-    void setCollapseParameters(int numiters, double threshold);
+    void setCollapseParameters(int numiters, double threshold, int collapses);
 
 protected:
 	void initializeGL();

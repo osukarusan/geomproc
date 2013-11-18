@@ -12,6 +12,7 @@ public:
     ~CornerTable();
 
     void buildTable(const std::vector<int>& triangles);
+    bool checkTable() const;
 
     int triangle(int corner) const;
     int vertex  (int corner) const;
@@ -23,12 +24,12 @@ public:
     int clockwise(int corner) const;
     int counterclockwise(int corner) const;
 
+    int valence(int corner) const;
+
     std::vector<int>& getVTable();
     std::vector<int>& getOTable();
 
 private:
-
-    bool checkTable() const;
 
     std::vector<int> vTable;    //vertex table
     std::vector<int> oTable;    //opposites table

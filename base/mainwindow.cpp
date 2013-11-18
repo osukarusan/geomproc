@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QActionGroup* rendergroup = new QActionGroup(this);
     rendergroup->addAction(ui->actionRenderNormal);
+    rendergroup->addAction(ui->actionRenderValence);
     rendergroup->addAction(ui->actionRenderCorners);
     rendergroup->addAction(ui->actionRenderCurvature);
 
@@ -67,6 +68,12 @@ void MainWindow::on_actionRenderNormal_triggered()
     ui->glwidget->updateGL();
 }
 
+void MainWindow::on_actionRenderValence_triggered()
+{
+    ui->glwidget->gRendertype = RENDER_VALENCE;
+    ui->glwidget->updateGL();
+}
+
 void MainWindow::on_actionRenderCorners_triggered()
 {
     ui->glwidget->gRendertype = RENDER_CORNERS;
@@ -111,7 +118,7 @@ void MainWindow::on_actionEdgeCollapse_triggered()
 {
     DialogCollapse dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
-        ui->glwidget->setCollapseParameters(dialog.getNumIterations(), dialog.getThreshold());
+        ui->glwidget->setCollapseParameters(dialog.getNumIterations(), dialog.getThreshold(), dialog.getNumCollapses());
         ui->actionRenderCollapsed->setChecked(true);
         this->on_actionRenderCollapsed_triggered();
     }

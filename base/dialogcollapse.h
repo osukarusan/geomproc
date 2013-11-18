@@ -16,6 +16,7 @@ public:
     ~DialogCollapse();
 
     int getNumIterations();
+    int getNumCollapses();
     double getThreshold();
 
 private:

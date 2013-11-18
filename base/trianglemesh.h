@@ -27,10 +27,11 @@ public:
 
     void computeCurvatures();
     void laplacianSmoothing(int iterations, double lambda);
-    void edgeCollapse(int iterations, double threshold);
+    void edgeCollapse(int iterations, double threshold, int maxCollapses = -1);
 
-    void render(bool bWireframe);
+    void renderNormal();
     void renderCornerColors();
+    void renderVertexValence();
     void renderCurvature();
 
 private:
