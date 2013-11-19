@@ -56,7 +56,8 @@ int CornerTable::valence(int corner) const {
 
 bool CornerTable::checkTable() const {
     for (int c = 0; c < int(vTable.size()); c++) {
-        if (opposite(c) != -1 && opposite(opposite(c)) != c) return false;
+        if (opposite(c) != -1 && opposite(opposite(c)) != c)
+            return false;
     }
     return true;
 }

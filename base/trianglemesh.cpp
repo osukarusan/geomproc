@@ -156,7 +156,7 @@ void TriangleMesh::renderCurvature()
     std::vector<vec3> vcolor(nVertices);
     for (int i = 0; i < nVertices; i++) {
         float r, g, b;
-        float t = 100*gaussianCurvature[i];
+        float t = 1000*gaussianCurvature[i];
         if (t < 0) {
             r = t/minKg;
             g = 1.0 - t/minKg;
@@ -298,7 +298,7 @@ void TriangleMesh::computeCurvatures()
 
             if (length(v1) > 1e-5 && length(v2) > 1e-5) {
                 // sum the area of this corner
-                areaSum[vid] += 0.5*(cross(v1, v2).length());
+                areaSum[vid] += 0.5*(length(cross(v1, v2)));
 
                 // sum the angle of this corner
                 v1 = normalize(v1);
@@ -360,6 +360,12 @@ void TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
 
 
 void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollapses) {
+
+    std::vector<int>& ot = cornerTable.getOTable();
+    for (int i = 0; i < (int)ot.size(); i++) {
+        if (ot[i] < 0)
+            std::cerr << "No opposite at corner " << i << " for vertex " << cornerTable.vertex(i) << std::endl;
+    }
 
     BBox bbox;
     this->getBBox(bbox);
