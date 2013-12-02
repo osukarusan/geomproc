@@ -352,50 +352,60 @@ void TriangleMesh::computeMedianCurvatures()
 {
     medianCurvature = std::vector<float>(nVertices, 0);
 
-    std::vector<double> angleSum(nVertices, 0);
-    std::vector<double> areaSum (nVertices, 0);
+    std::vector<double> edgeSum(nVertices, 0);
+    std::vector<double> areaSum(nVertices, 0);
 
     for (int i = 0; i < (int)vTable.size(); i++) {
 
-        int vid = vTable[i];
+        // get the edge
+        int vid = cornerTable.vertex(i);
         if (vid < 0) continue;
+        int vfd = cornerTable.vertex(cornerTable.next(i));
+        if (vfd < 0) continue;
 
-        // get the neighbor vertices
+        // edge length
+        vec3 vi = vertices[vid];
+        vec3 vf = vertices[vfd];
+        float e_i = length(vf - vi);
+
+        // face normals
+        int fi0 = cornerTable.triangle(i);
+        int fi1 = cornerTable.triangle(cornerTable.clockwise(i));
+        float B_i = 1.0f;
+        if (fi0 >= 0 && fi1 >= 0) {
+            vec3 nf0 = normals[fi0];
+            vec3 nf1 = normals[fi1];
+            B_i = dot(nf0, nf1);
+        }
+
+        // accumulate
+        edgeSum[vid] += e_i*B_i;
+
+        // sum the area of this corner
         int vi1 = cornerTable.vertex(cornerTable.next(i));
         int vi2 = cornerTable.vertex(cornerTable.prev(i));
-
-        if (vi1 >= 0 || vi2 >= 0) {
-            // vectors from center to neighbor vertices
+        if (vi1 >= 0 && vi2 >= 0) {
             vec3 v0 = vertices[vid];
             vec3 v1 = vertices[vi1] - v0;
             vec3 v2 = vertices[vi2] - v0;
-
-            if (length(v1) > 1e-5 && length(v2) > 1e-5) {
-                // sum the area of this corner
-                areaSum[vid] += 0.5*(length(cross(v1, v2)));
-
-                // sum the angle of this corner
-                v1 = normalize(v1);
-                v2 = normalize(v2);
-                angleSum[vid] += acos(dot(v1, v2));
-            }
+            areaSum[vid] += 0.5*(length(cross(v1, v2)));
         }
     }
 
-    // Kg = (2*pi - Sum(alpha))/(1/3 * Sum(area))
+    // Km = (1/4 * Sum(e_i * B_i))/(1/3 * Sum(area))
     for (int i = 0; i < nVertices; i++) {
-        medianCurvature[i] = (2.0*M_PI - angleSum[i])/((1.0/3.0)*areaSum[i]);
+        medianCurvature[i] = (0.25*edgeSum[i])/((1.0/3.0)*areaSum[i]);
     }
 
-    minKg = medianCurvature[0];
-    maxKg = medianCurvature[0];
+    minKm = medianCurvature[0];
+    maxKm = medianCurvature[0];
     for (int i = 1; i < nVertices; i++) {
-        minKg = std::min(minKg, medianCurvature[i]);
-        maxKg = std::max(maxKg, medianCurvature[i]);
+        minKm = std::min(minKm, medianCurvature[i]);
+        maxKm = std::max(maxKm, medianCurvature[i]);
     }
 
-    std::cout << "Hg min = " << minKg << std::endl;
-    std::cout << "Hg max = " << maxKg << std::endl;
+    std::cout << "Km min = " << minKm << std::endl;
+    std::cout << "Km max = " << maxKm << std::endl;
 }
 
 

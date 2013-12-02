@@ -57,7 +57,7 @@ private:
     vector<float>   gaussianCurvature;
     vector<float>   medianCurvature;
     float           minKg, maxKg;
-    float           minHg, maxHg;
+    float           minKm, maxKm;
 
     CornerTable cornerTable;
 
@@ -70,8 +70,8 @@ inline void TriangleMesh::getGaussianCurvatures(float &min, float &max) const {
 }
 
 inline void TriangleMesh::getMedianCurvatures(float &min, float &max) const {
-    min = minHg;
-    max = maxHg;
+    min = minKm;
+    max = maxKm;
 }
 
 
