@@ -18,7 +18,8 @@ SOURCES += main.cpp\
     trianglemesh.cpp \
     cornertable.cpp \
     dialogcollapse.cpp \
-    dialogsmoothing.cpp
+    dialogsmoothing.cpp \
+    dialogcurvature.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -26,14 +27,17 @@ HEADERS  += mainwindow.h \
     bbox.h \
     trianglemesh.h \
     cornertable.h \
+    UpdatePQ.h \
     dialogcollapse.h \
-    dialogsmoothing.h
+    dialogsmoothing.h \
+    dialogcurvature.h
 
 macx:LIBS += -glu
 !macx:LIBS += -lGLU
 
 FORMS    += mainwindow.ui \
     dialogcollapse.ui \
-    dialogsmoothing.ui
+    dialogsmoothing.ui \
+    dialogcurvature.ui
 
 macx:DEFINES += MACOSX

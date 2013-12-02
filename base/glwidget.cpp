@@ -16,6 +16,7 @@ GLWidget::GLWidget(QWidget *parent) :
     bWireframe = false;
     gRendertype = RENDER_NORMAL;
     gRendermesh = RENDER_ORIGINAL;
+    curvatureScaleType = 0;
 }
 
 
@@ -27,8 +28,14 @@ bool GLWidget::loadMesh(const QString &filename)
 
 	if(mesh->load(filename.toAscii().data()))
     {
-        mesh->computeCurvatures();
+        mesh->computeGaussianCurvatures();
+        mesh->computeMedianCurvatures();
+        float cmin, cmax;
+        mesh->getGaussianCurvatures(cmin, cmax);
+
 		resetCamera();
+        curvatureRenderMin = cmin;
+        curvatureRenderMax = cmax;
 		bWireframe = false;
 		return true;
 	}
@@ -77,6 +84,17 @@ void GLWidget::resizeGL(int w, int h)
 	cam.changeAspect(float(w) / float(h));
 }
 
+TriangleMesh* GLWidget::getDisplayMesh() const {
+    TriangleMesh* renderMesh;
+    switch (gRendermesh) {
+        case RENDER_ORIGINAL:   renderMesh = mesh; break;
+        case RENDER_SMOOTHED:   renderMesh = smoothMesh; break;
+        case RENDER_COLLAPSED:  renderMesh = collapsedMesh; break;
+        default:                renderMesh = mesh; break;
+    }
+    return renderMesh;
+}
+
 void GLWidget::paintGL()
 {
 	cam.setOpenGLMatrices();
@@ -86,14 +104,7 @@ void GLWidget::paintGL()
 	else
 		glEnable(GL_LIGHTING);
 
-    TriangleMesh* renderMesh;
-    switch (gRendermesh) {
-        case RENDER_ORIGINAL:   renderMesh = mesh; break;
-        case RENDER_SMOOTHED:   renderMesh = smoothMesh; break;
-        case RENDER_COLLAPSED:  renderMesh = collapsedMesh; break;
-        default:                renderMesh = mesh; break;
-    }
-
+    TriangleMesh* renderMesh = getDisplayMesh();
     if(renderMesh != NULL) {
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -118,8 +129,11 @@ void GLWidget::paintGL()
             case RENDER_CORNERS:
                 renderMesh->renderCornerColors();
                 break;
-            case RENDER_CURVATURE:
-                renderMesh->renderCurvature();
+            case RENDER_GAUSSIAN_CURVATURE:
+                renderMesh->renderGaussianCurvature(curvatureScaleType, curvatureRenderMin, curvatureRenderMax);
+                break;
+            case RENDER_MEDIAN_CURVATURE:
+                renderMesh->renderMedianCurvature(curvatureScaleType, curvatureRenderMin, curvatureRenderMax);
                 break;
             default:
                 break;
@@ -180,6 +194,20 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
 	{
 		bWireframe = !bWireframe;
 		updateGL();
+    }
+}
+
+void GLWidget::getCurvatureBounds(float &min, float &max) {
+    TriangleMesh* cmesh = getDisplayMesh();
+    if (gRendertype == RENDER_GAUSSIAN_CURVATURE) {
+        cmesh->getGaussianCurvatures(min, max);
+    }
+    else if (gRendertype == RENDER_MEDIAN_CURVATURE) {
+        cmesh->getMedianCurvatures(min, max);
+    }
+    else {
+        min = 0;
+        max = 0;
     }
 }
 

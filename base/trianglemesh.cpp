@@ -7,9 +7,9 @@
 #include <GL/glu.h>
 #include <GL/glu.h>
 #endif
-#include "trianglemesh.h"
 #include <cmath>
-#include <queue>
+#include "trianglemesh.h"
+#include "UpdatePQ.h"
 
 
 const float cornerColors[8][3] = {
@@ -151,21 +151,33 @@ void TriangleMesh::renderVertexValence()
     glEnd();
 }
 
-void TriangleMesh::renderCurvature()
+void TriangleMesh::renderCurvature(const std::vector<float> &c, int st, float min, float max)
 {
     std::vector<vec3> vcolor(nVertices);
+    float tmin, tmax;
+    switch (st) {
+        case 0:
+            tmin = std::min(-1e-5f, min);
+            tmax = max;
+            break;
+        case 1:
+            tmin = std::log(1e-5f);
+            tmax = std::log(max - min);
+            break;
+    }
+
     for (int i = 0; i < nVertices; i++) {
+        float t = (st == 0 ? 1000.0f*c[i] : std::log(std::max(c[i] - min, 1e-5f)));
         float r, g, b;
-        float t = 1000*gaussianCurvature[i];
-        if (t < 0) {
-            r = t/minKg;
-            g = 1.0 - t/minKg;
+        if (c[i] < 0) {
+            r = std::min(t/tmin, 1.0f);
+            g = 1.0 - r;
             b = 0.0;
         }
-        else if (t >= 0) {
+        else if (c[i] >= 0) {
             r = 0.0;
-            g = 1.0 - t/maxKg;
-            b = t/maxKg;
+            b = std::min(t/tmax, 1.0f);
+            g = 1.0 - b;
         }
         vcolor[i] = vec3(r, g, b);
     }
@@ -182,6 +194,16 @@ void TriangleMesh::renderCurvature()
         glVertex3fv(&vertices[vTable[i+2]].x);
     }
     glEnd();
+}
+
+void TriangleMesh::renderGaussianCurvature(int scaletype, float min, float max)
+{
+    renderCurvature(gaussianCurvature, scaletype, min, max);
+}
+
+void TriangleMesh::renderMedianCurvature(int scaletype, float min, float max)
+{
+    renderCurvature(medianCurvature, scaletype, min, max);
 }
 
 
@@ -274,9 +296,9 @@ void TriangleMesh::computeNormalsPerFace()
 	}
 }
 
-void TriangleMesh::computeCurvatures()
+void TriangleMesh::computeGaussianCurvatures()
 {
-    gaussianCurvature = std::vector<double>(nVertices, 0);
+    gaussianCurvature = std::vector<float>(nVertices, 0);
 
     std::vector<double> angleSum(nVertices, 0);
     std::vector<double> areaSum (nVertices, 0);
@@ -325,6 +347,58 @@ void TriangleMesh::computeCurvatures()
 
 }
 
+
+void TriangleMesh::computeMedianCurvatures()
+{
+    medianCurvature = std::vector<float>(nVertices, 0);
+
+    std::vector<double> angleSum(nVertices, 0);
+    std::vector<double> areaSum (nVertices, 0);
+
+    for (int i = 0; i < (int)vTable.size(); i++) {
+
+        int vid = vTable[i];
+        if (vid < 0) continue;
+
+        // get the neighbor vertices
+        int vi1 = cornerTable.vertex(cornerTable.next(i));
+        int vi2 = cornerTable.vertex(cornerTable.prev(i));
+
+        if (vi1 >= 0 || vi2 >= 0) {
+            // vectors from center to neighbor vertices
+            vec3 v0 = vertices[vid];
+            vec3 v1 = vertices[vi1] - v0;
+            vec3 v2 = vertices[vi2] - v0;
+
+            if (length(v1) > 1e-5 && length(v2) > 1e-5) {
+                // sum the area of this corner
+                areaSum[vid] += 0.5*(length(cross(v1, v2)));
+
+                // sum the angle of this corner
+                v1 = normalize(v1);
+                v2 = normalize(v2);
+                angleSum[vid] += acos(dot(v1, v2));
+            }
+        }
+    }
+
+    // Kg = (2*pi - Sum(alpha))/(1/3 * Sum(area))
+    for (int i = 0; i < nVertices; i++) {
+        medianCurvature[i] = (2.0*M_PI - angleSum[i])/((1.0/3.0)*areaSum[i]);
+    }
+
+    minKg = medianCurvature[0];
+    maxKg = medianCurvature[0];
+    for (int i = 1; i < nVertices; i++) {
+        minKg = std::min(minKg, medianCurvature[i]);
+        maxKg = std::max(maxKg, medianCurvature[i]);
+    }
+
+    std::cout << "Hg min = " << minKg << std::endl;
+    std::cout << "Hg max = " << maxKg << std::endl;
+}
+
+
 void TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
 
     // precompute neighbor information
@@ -355,7 +429,8 @@ void TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
         }
     }
     computeNormalsPerFace();
-    computeCurvatures();
+    computeGaussianCurvatures();
+    computeMedianCurvatures();
 }
 
 
@@ -380,26 +455,26 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
         int collapses  = 0;
 
         // priorize edges from smallest to largest
-        std::priority_queue<std::pair<float, int> > PQ;
+        UpdatePQ<int> PQ;
         for (int i = 0; i < (int)vTable.size(); i++) {
             int vi = cornerTable.vertex(i);
             int vf = cornerTable.vertex(cornerTable.next(i));
             // collapse only edges smaller than threshold
             float elen = length(vertices[vi] - vertices[vf]);
             if (elen <= tlen) {
-                PQ.push(std::pair<float, int>(-elen, i));
+                PQ.add(elen, i);
             }
         }
 
         // for each edge in the priority queue
-        while (PQ.size() && collapses < maxCollapses) {
+        while (!PQ.empty() && PQ.topPriority() <= tlen && collapses < maxCollapses) {
 
             // remove top
-            std::pair<float, int> pqi = PQ.top();
+            int pqi = PQ.top();
             PQ.pop();
 
             // get edge information
-            int ci = pqi.second;                // corner ini
+            int ci = pqi;                       // corner ini
             int cf = cornerTable.next(ci);      // corner final
             int cl = cornerTable.prev(ci);      // corner at edge left side
             int cr = cornerTable.opposite(cl);  // corner at edge right side
@@ -408,53 +483,80 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
             int tl = cornerTable.triangle(cl);
             int tr = cornerTable.triangle(cr);
 
+
             // check both vertices and corners are still valid
             if (   !validVertex[vi]   || !validVertex[vf]
                 || !validTriangle[tl] || !validTriangle[tr])
                 continue;
 
-            // collapse only edges smaller than threshold
-            if (length(vertices[vi] - vertices[vf]) > tlen)
+            // check #vertices in 1-ring intersections is exactly 2
+            std::vector<int> ciring, cfring;
+            cornerTable.corners1ring(ci, ciring);
+            cornerTable.corners1ring(cf, cfring);
+            std::set<int> viVerts;
+            for (unsigned int i = 0; i < ciring.size(); i++) {
+                viVerts.insert(cornerTable.vertex(ciring[i]));
+            }
+            int intersection = 0;
+            for (unsigned int i = 0; i < cfring.size(); i++) {
+                if (viVerts.find(cornerTable.vertex(cfring[i])) != viVerts.end())
+                    intersection++;
+            }
+            if (intersection != 2)
                 continue;
 
-            // if vertex valence is 3 or less, do not collapse
-            if (cornerTable.valence(cl) < 4 || cornerTable.valence(cr) < 4)
+            // if face normals would invert, do not collapse
+            bool inversion = true;
+            int lastci = cornerTable.counterclockwise(ci);
+            int corner = cornerTable.clockwise(ci);
+            do {
+                vec3 vcn = vertices[cornerTable.vertex(cornerTable.next(corner))];
+                vec3 vcp = vertices[cornerTable.vertex(cornerTable.prev(corner))];
+                vec3 nb = cross(vcn - vertices[vi], vcp - vertices[vi]);
+                vec3 na = cross(vcn - vertices[vf], vcp - vertices[vf]);
+                bool illnormals = length(nb) < 1e-5 || length(na) < 1e-5;
+                if (!illnormals) {
+                    nb = normalize(nb);
+                    na = normalize(na);
+                    inversion = dot(nb, na) < cos(M_PI/4);
+                }
+                else {
+                    inversion = true;
+                }
+                corner = cornerTable.clockwise(corner);
+            } while (!inversion && corner != lastci && corner >= 0);
+            if (inversion)
                 continue;
 
-            // if final opposite vertices are the same, do not collapse
+
+            // information about opposites needed for updates
             int crp  = cornerTable.prev(cr);
             int crn  = cornerTable.next(cr);
             int cio1 = cornerTable.opposite(ci);
             int cfo1 = cornerTable.opposite(cf);
             int cio2 = cornerTable.opposite(crp);
             int cfo2 = cornerTable.opposite(crn);
-            if (   cornerTable.vertex(cio1) == cornerTable.vertex(cfo1)
-                || cornerTable.vertex(cio2) == cornerTable.vertex(cfo2))
-                continue;
-
-            // if face normals would invert, do not collapse
-            bool inversion = true;
-            int corner = cornerTable.clockwise(ci);
-            int lastci = cornerTable.counterclockwise(ci);
-            do {
-                vec3 vcn = vertices[cornerTable.vertex(cornerTable.next(corner))];
-                vec3 vcp = vertices[cornerTable.vertex(cornerTable.prev(corner))];
-                vec3 nb = cross(vcn - vertices[vi], vcp - vertices[vi]);
-                vec3 na = cross(vcn - vertices[vf], vcp - vertices[vf]);
-                inversion = dot(nb, na) < 0 || length(nb) < 1e-5 || length(na) < 1e-5;
-                corner = cornerTable.clockwise(corner);
-            } while (!inversion && corner != lastci && corner >= 0);
-            if (inversion)
-                continue;
 
             // update vtable
             std::vector<int>& vtable = cornerTable.getVTable();
-            corner = ci;
-            do {
+            std::vector<int> ciloop;
+            cornerTable.cornersLoop(ci, ciloop);
+            for (unsigned int i = 0; i < ciloop.size(); i++) {
+                corner = ciloop[i];
                 vTable[corner] = vf;
                 vtable[corner] = vf;
-                corner = cornerTable.clockwise(corner);
-            } while (corner != ci && corner >= 0);
+
+                // update edge priority (based on length)
+                int nvi = cornerTable.vertex(cornerTable.next(corner));
+                double nelen = length(vertices[nvi] - vertices[vf]);
+                if (nelen < tlen) {
+                    if (!PQ.updatePriority(corner, nelen))
+                        PQ.add(nelen, corner);
+                }
+                else {
+                    PQ.remove(corner);
+                }
+            }
 
             // update otable
             std::vector<int>& otable = cornerTable.getOTable();
@@ -512,7 +614,8 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
     }
 
     computeNormalsPerFace();
-    computeCurvatures();
+    computeGaussianCurvatures();
+    computeMedianCurvatures();
 
 }
 

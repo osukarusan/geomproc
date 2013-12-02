@@ -16,12 +16,14 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+    dialogCurvature = 0;
 
     QActionGroup* rendergroup = new QActionGroup(this);
     rendergroup->addAction(ui->actionRenderNormal);
     rendergroup->addAction(ui->actionRenderValence);
     rendergroup->addAction(ui->actionRenderCorners);
-    rendergroup->addAction(ui->actionRenderCurvature);
+    rendergroup->addAction(ui->actionRenderGCurvature);
+    rendergroup->addAction(ui->actionRenderMCurvature);
 
     QActionGroup* meshgroup = new QActionGroup(this);
     meshgroup->addAction(ui->actionRenderOriginal);
@@ -32,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
 	delete ui;
+    if (dialogCurvature)
+        delete dialogCurvature;
 }
 
 
@@ -80,9 +84,15 @@ void MainWindow::on_actionRenderCorners_triggered()
     ui->glwidget->updateGL();
 }
 
-void MainWindow::on_actionRenderCurvature_triggered()
+void MainWindow::on_actionRenderGCurvature_triggered()
 {
-    ui->glwidget->gRendertype = RENDER_CURVATURE;
+    ui->glwidget->gRendertype = RENDER_GAUSSIAN_CURVATURE;
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionRenderMCurvature_triggered()
+{
+    ui->glwidget->gRendertype = RENDER_MEDIAN_CURVATURE;
     ui->glwidget->updateGL();
 }
 
@@ -102,6 +112,37 @@ void MainWindow::on_actionRenderCollapsed_triggered()
 {
     ui->glwidget->gRendermesh = RENDER_COLLAPSED;
     ui->glwidget->updateGL();
+}
+
+void MainWindow::updateCurvatureRenderParams()
+{
+    ui->glwidget->curvatureScaleType = dialogCurvature->getScalingType();
+    ui->glwidget->curvatureRenderMin = dialogCurvature->getMinValue();
+    ui->glwidget->curvatureRenderMax = dialogCurvature->getMaxValue();
+    ui->glwidget->updateGL();
+}
+
+void MainWindow::on_actionCurvatureParams_triggered()
+{
+    int   rcst = ui->glwidget->curvatureScaleType;
+    float rmin = ui->glwidget->curvatureRenderMin;
+    float rmax = ui->glwidget->curvatureRenderMax;
+    float cmin, cmax;
+    ui->glwidget->getCurvatureBounds(cmin, cmax);
+
+    if (!dialogCurvature) {
+        dialogCurvature = new DialogCurvature(this);
+        connect(dialogCurvature, SIGNAL(parametersChanged()), this, SLOT(updateCurvatureRenderParams()));
+    }
+    dialogCurvature->setMinValue(cmin, rmin);
+    dialogCurvature->setMaxValue(cmax, rmax);
+
+    if (dialogCurvature->exec() != QDialog::Accepted) {
+        ui->glwidget->curvatureScaleType = rcst;
+        ui->glwidget->curvatureRenderMin = rmin;
+        ui->glwidget->curvatureRenderMax = rmax;
+        ui->glwidget->updateGL();
+    }
 }
 
 void MainWindow::on_actionSmooth_triggered()

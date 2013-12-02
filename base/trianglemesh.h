@@ -25,14 +25,19 @@ public:
 
 	void getBBox(BBox &bbox);
 
-    void computeCurvatures();
+    void getGaussianCurvatures(float& min, float& max) const;
+    void getMedianCurvatures  (float& min, float& max) const;
+
+    void computeGaussianCurvatures();
+    void computeMedianCurvatures();
     void laplacianSmoothing(int iterations, double lambda);
     void edgeCollapse(int iterations, double threshold, int maxCollapses = -1);
 
     void renderNormal();
     void renderCornerColors();
     void renderVertexValence();
-    void renderCurvature();
+    void renderGaussianCurvature(int scaletype, float min, float max);
+    void renderMedianCurvature(int scaletype, float min, float max);
 
 private:
 	bool loadHeader(ifstream &fin);
@@ -42,17 +47,32 @@ private:
 	void addTriangle(const int tri[3]);
 	void computeNormalsPerFace();
 
+    void renderCurvature(const std::vector<float>& c, int t, float min, float max);
+
 
     int nVertices,  nFaces;
     vector<vec3>    vertices, normals;
     vector<int>     vTable;
 
-    vector<double>  gaussianCurvature;
-    double          minKg, maxKg;
+    vector<float>   gaussianCurvature;
+    vector<float>   medianCurvature;
+    float           minKg, maxKg;
+    float           minHg, maxHg;
 
     CornerTable cornerTable;
 
 };
+
+
+inline void TriangleMesh::getGaussianCurvatures(float &min, float &max) const {
+    min = minKg;
+    max = maxKg;
+}
+
+inline void TriangleMesh::getMedianCurvatures(float &min, float &max) const {
+    min = minHg;
+    max = maxHg;
+}
 
 
 #endif // TRIANGLEMESH_H

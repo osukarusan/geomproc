@@ -2,6 +2,7 @@
 #include <map>
 #include <utility>
 #include <iostream>
+#include <set>
 
 
 CornerTable::CornerTable()
@@ -45,13 +46,20 @@ void CornerTable::buildTable(const std::vector<int>& tris)
 }
 
 int CornerTable::valence(int corner) const {
-    int v = 0;
+    std::set<int> vset;
     int c = corner;
     do {
-        v++;
+        vset.insert(c);
         c = clockwise(c);
     } while (c >= 0 && c != corner);
-    return v;
+    if (c < 0) {
+        c = counterclockwise(corner);
+        do {
+            vset.insert(c);
+            c = counterclockwise(c);
+        } while (c >= 0 && c != corner);
+    }
+    return vset.size();
 }
 
 bool CornerTable::checkTable() const {
@@ -60,4 +68,35 @@ bool CornerTable::checkTable() const {
             return false;
     }
     return true;
+}
+
+void CornerTable::cornersLoop(int ci, std::vector<int> &cloop) const {
+    int c = ci;
+    do {
+        cloop.push_back(c);
+        c = clockwise(c);
+    } while (c >= 0 && c != ci);
+    if (c < 0) {
+        c = counterclockwise(ci);
+        while (c >= 0) {
+            cloop.push_back(c);
+            c = counterclockwise(c);
+        }
+    }
+}
+
+void CornerTable::corners1ring(int ci, std::vector<int> &cring) const {
+    int c = ci;
+    do {
+        cring.push_back(next(c));
+        c = clockwise(c);
+    } while (c >= 0 && c != ci);
+    if (c < 0) {
+        c = ci;
+        while (counterclockwise(c) >= 0) {
+            c = counterclockwise(c);
+            cring.push_back(next(c));
+        }
+        cring.push_back(prev(c));
+    }
 }

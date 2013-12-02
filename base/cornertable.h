@@ -21,8 +21,11 @@ public:
     int next(int corner) const;
     int prev(int corner) const;
 
-    int clockwise(int corner) const;
-    int counterclockwise(int corner) const;
+    int  clockwise(int corner) const;
+    int  counterclockwise(int corner) const;
+
+    void cornersLoop (int corner, std::vector<int>& cloop) const;
+    void corners1ring(int corner, std::vector<int>& cring) const;
 
     int valence(int corner) const;
 

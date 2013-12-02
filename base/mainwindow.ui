@@ -53,7 +53,10 @@
     <addaction name="actionRenderNormal"/>
     <addaction name="actionRenderCorners"/>
     <addaction name="actionRenderValence"/>
-    <addaction name="actionRenderCurvature"/>
+    <addaction name="actionRenderGCurvature"/>
+    <addaction name="actionRenderMCurvature"/>
+    <addaction name="separator"/>
+    <addaction name="actionCurvatureParams"/>
     <addaction name="separator"/>
     <addaction name="actionRenderOriginal"/>
     <addaction name="actionRenderSmoothed"/>
@@ -110,12 +113,12 @@
     <string>Corners</string>
    </property>
   </action>
-  <action name="actionRenderCurvature">
+  <action name="actionRenderGCurvature">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Curvature</string>
+    <string>Gaussian curvature</string>
    </property>
   </action>
   <action name="actionSmooth">
@@ -161,6 +164,19 @@
    </property>
    <property name="text">
     <string>Valence</string>
+   </property>
+  </action>
+  <action name="actionRenderMCurvature">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Median curvature</string>
+   </property>
+  </action>
+  <action name="actionCurvatureParams">
+   <property name="text">
+    <string>Curvature params...</string>
    </property>
   </action>
  </widget>

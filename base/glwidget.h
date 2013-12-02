@@ -9,7 +9,8 @@
 #include "camera.h"
 
 
-enum RenderType { RENDER_NORMAL, RENDER_VALENCE, RENDER_CORNERS, RENDER_CURVATURE, NUM_RENDER_TYPES };
+enum RenderType { RENDER_NORMAL, RENDER_VALENCE, RENDER_CORNERS,
+                  RENDER_GAUSSIAN_CURVATURE, RENDER_MEDIAN_CURVATURE, NUM_RENDER_TYPES };
 enum RenderMesh { RENDER_ORIGINAL, RENDER_SMOOTHED, RENDER_COLLAPSED, NUM_MESH_TYPES };
 
 
@@ -20,6 +21,10 @@ class GLWidget : public QGLWidget
 public:
     RenderType gRendertype;
     RenderMesh gRendermesh;
+
+    int    curvatureScaleType;
+    double curvatureRenderMin;
+    double curvatureRenderMax;
 
 private:
 	Camera cam;
@@ -37,6 +42,8 @@ public:
 
 	void resetCamera();
 
+    void getCurvatureBounds(float& min, float& max);
+
     void setSmoothParameters(int numiters, double lambda);
     void setCollapseParameters(int numiters, double threshold, int collapses);
 
@@ -49,6 +56,8 @@ protected:
 	void mouseMoveEvent(QMouseEvent *event);
 	void mouseReleaseEvent(QMouseEvent *event);
 	void keyPressEvent(QKeyEvent *event);
+
+    TriangleMesh* getDisplayMesh() const;
 
 };
 
