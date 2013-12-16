@@ -36,6 +36,8 @@ private slots:
 
     void on_actionCurvatureParams_triggered();
     void on_actionSmooth_triggered();
+    void on_actionTaubin_triggered();
+    void on_actionTangential_triggered();
     void on_actionEdgeCollapse_triggered();
 
     void updateCurvatureRenderParams();

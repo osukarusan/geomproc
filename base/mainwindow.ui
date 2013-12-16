@@ -67,6 +67,9 @@
      <string>Operations</string>
     </property>
     <addaction name="actionSmooth"/>
+    <addaction name="actionTaubin"/>
+    <addaction name="actionTangential"/>
+    <addaction name="separator"/>
     <addaction name="actionEdgeCollapse"/>
    </widget>
    <addaction name="menuFile"/>
@@ -123,7 +126,7 @@
   </action>
   <action name="actionSmooth">
    <property name="text">
-    <string>Smooth...</string>
+    <string>Laplacian Smooth...</string>
    </property>
   </action>
   <action name="actionRenderOriginal">
@@ -177,6 +180,16 @@
   <action name="actionCurvatureParams">
    <property name="text">
     <string>Curvature params...</string>
+   </property>
+  </action>
+  <action name="actionTaubin">
+   <property name="text">
+    <string>Taubin Smooth...</string>
+   </property>
+  </action>
+  <action name="actionTangential">
+   <property name="text">
+    <string>Tangential Smooth...</string>
    </property>
   </action>
  </widget>

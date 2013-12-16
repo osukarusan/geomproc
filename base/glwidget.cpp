@@ -11,7 +11,7 @@ GLWidget::GLWidget(QWidget *parent) :
 {
 	setFocusPolicy(Qt::StrongFocus);
 	mesh = NULL;
-    smoothMesh = NULL;
+    smoothedMesh = NULL;
     collapsedMesh = NULL;
     bWireframe = false;
     gRendertype = RENDER_NORMAL;
@@ -49,9 +49,9 @@ void GLWidget::closeMesh()
         delete mesh;
         mesh = NULL;
     }
-    if (smoothMesh) {
-        delete smoothMesh;
-        smoothMesh = NULL;
+    if (smoothedMesh) {
+        delete smoothedMesh;
+        smoothedMesh = NULL;
     }
     if (collapsedMesh) {
         delete collapsedMesh;
@@ -88,7 +88,7 @@ TriangleMesh* GLWidget::getDisplayMesh() const {
     TriangleMesh* renderMesh;
     switch (gRendermesh) {
         case RENDER_ORIGINAL:   renderMesh = mesh; break;
-        case RENDER_SMOOTHED:   renderMesh = smoothMesh; break;
+        case RENDER_SMOOTHED:   renderMesh = smoothedMesh; break;
         case RENDER_COLLAPSED:  renderMesh = collapsedMesh; break;
         default:                renderMesh = mesh; break;
     }
@@ -211,13 +211,33 @@ void GLWidget::getCurvatureBounds(float &min, float &max) {
     }
 }
 
-void GLWidget::setSmoothParameters(int numiters, double lambda) {
+void GLWidget::setLaplacianSmoothParameters(int numiters, double lambda) {
     if (!mesh) return;
-    if (smoothMesh)
-        delete smoothMesh;
+    if (smoothedMesh)
+        delete smoothedMesh;
 
-    smoothMesh = mesh->getCopy();
-    smoothMesh->laplacianSmoothing(numiters, lambda);
+    smoothedMesh = mesh->getCopy();
+    smoothedMesh->laplacianSmoothing(numiters, lambda);
+    this->updateGL();
+}
+
+void GLWidget::setTaubinSmoothParameters(int numiters, double lambda, double mu) {
+    if (!mesh) return;
+    if (smoothedMesh)
+        delete smoothedMesh;
+
+    smoothedMesh = mesh->getCopy();
+    smoothedMesh->taubinSmoothing(numiters, lambda, mu);
+    this->updateGL();
+}
+
+void GLWidget::setTangentialSmoothParameters(int numiters, double lambda) {
+    if (!mesh) return;
+    if (smoothedMesh)
+        delete smoothedMesh;
+
+    smoothedMesh = mesh->getCopy();
+    smoothedMesh->tangentialSmoothing(numiters, lambda);
     this->updateGL();
 }
 

@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     cornertable.cpp \
     dialogcollapse.cpp \
     dialogsmoothing.cpp \
-    dialogcurvature.cpp
+    dialogcurvature.cpp \
+    dialogtaubin.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -30,7 +31,8 @@ HEADERS  += mainwindow.h \
     UpdatePQ.h \
     dialogcollapse.h \
     dialogsmoothing.h \
-    dialogcurvature.h
+    dialogcurvature.h \
+    dialogtaubin.h
 
 macx:LIBS += -glu
 !macx:LIBS += -lGLU
@@ -38,6 +40,7 @@ macx:LIBS += -glu
 FORMS    += mainwindow.ui \
     dialogcollapse.ui \
     dialogsmoothing.ui \
-    dialogcurvature.ui
+    dialogcurvature.ui \
+    dialogtaubin.ui
 
 macx:DEFINES += MACOSX

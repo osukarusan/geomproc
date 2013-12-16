@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "dialogsmoothing.h"
+#include "dialogtaubin.h"
 #include "dialogcollapse.h"
 
 #ifdef MACOSX
@@ -149,7 +150,27 @@ void MainWindow::on_actionSmooth_triggered()
 {
     DialogSmoothing dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
-        ui->glwidget->setSmoothParameters(dialog.getNumIterations(), dialog.getLambda());
+        ui->glwidget->setLaplacianSmoothParameters(dialog.getNumIterations(), dialog.getLambda());
+        ui->actionRenderSmoothed->setChecked(true);
+        this->on_actionRenderSmoothed_triggered();
+    }
+}
+
+void MainWindow::on_actionTaubin_triggered()
+{
+    DialogTaubin dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        ui->glwidget->setTaubinSmoothParameters(dialog.getNumIterations(), dialog.getLambda(), dialog.getMu());
+        ui->actionRenderSmoothed->setChecked(true);
+        this->on_actionRenderSmoothed_triggered();
+    }
+}
+
+void MainWindow::on_actionTangential_triggered()
+{
+    DialogSmoothing dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        ui->glwidget->setTangentialSmoothParameters(dialog.getNumIterations(), dialog.getLambda());
         ui->actionRenderSmoothed->setChecked(true);
         this->on_actionRenderSmoothed_triggered();
     }

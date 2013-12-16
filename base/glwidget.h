@@ -31,7 +31,7 @@ private:
 	int initx, inity;
     bool bWireframe;
 	TriangleMesh *mesh;
-    TriangleMesh *smoothMesh;
+    TriangleMesh *smoothedMesh;
     TriangleMesh *collapsedMesh;
 
 public:
@@ -44,7 +44,9 @@ public:
 
     void getCurvatureBounds(float& min, float& max);
 
-    void setSmoothParameters(int numiters, double lambda);
+    void setLaplacianSmoothParameters (int numiters, double lambda);
+    void setTaubinSmoothParameters    (int numiters, double lambda, double mu);
+    void setTangentialSmoothParameters(int numiters, double lambda);
     void setCollapseParameters(int numiters, double threshold, int collapses);
 
 protected:

@@ -31,6 +31,8 @@ public:
     void computeGaussianCurvatures();
     void computeMedianCurvatures();
     void laplacianSmoothing(int iterations, double lambda);
+    void taubinSmoothing(int iterations, double lambda, double mu);
+    void tangentialSmoothing(int iterations, double lambda);
     void edgeCollapse(int iterations, double threshold, int maxCollapses = -1);
 
     void renderNormal();
@@ -46,9 +48,6 @@ private:
 
 	void addTriangle(const int tri[3]);
 	void computeNormalsPerFace();
-
-    void renderCurvature(const std::vector<float>& c, int t, float min, float max);
-
 
     int nVertices,  nFaces;
     vector<vec3>    vertices, normals;

@@ -151,33 +151,42 @@ void TriangleMesh::renderVertexValence()
     glEnd();
 }
 
-void TriangleMesh::renderCurvature(const std::vector<float> &c, int st, float min, float max)
+void TriangleMesh::renderGaussianCurvature(int scaletype, float min, float max)
 {
+    std::vector<float>& c = gaussianCurvature;
+
     std::vector<vec3> vcolor(nVertices);
-    float tmin, tmax;
-    switch (st) {
+    float tmin, tmax, tmid;
+    switch (scaletype) {
         case 0:
-            tmin = std::min(-1e-5f, min);
+            tmin = std::max(-1e-5f, min);
             tmax = max;
+            tmid = 0.5f*(tmin + tmax);
             break;
         case 1:
-            tmin = std::log(1e-5f);
-            tmax = std::log(max - min);
+            tmin = log2(1e-5f);
+            tmax = log2(std::max(max - min, 1e-5f));
+            tmid = 0.5f*(tmin + tmax);
             break;
     }
 
     for (int i = 0; i < nVertices; i++) {
-        float t = (st == 0 ? 1000.0f*c[i] : std::log(std::max(c[i] - min, 1e-5f)));
+        float t;
+        if (scaletype == 0)
+            t = clamp(c[i], tmin, tmax);
+        else
+            t = log2(clamp(t - min, 1e-5f, max - min));
+
         float r, g, b;
-        if (c[i] < 0) {
-            r = std::min(t/tmin, 1.0f);
+        if (tmin < 0 && c[i] < 0) {
+            r = 0.0;
+            g = (t - tmin)/(tmid - tmin);
+            b = 1.0 - g;
+        }
+        else {
+            r = (t - tmid)/(tmax - tmid);
             g = 1.0 - r;
             b = 0.0;
-        }
-        else if (c[i] >= 0) {
-            r = 0.0;
-            b = std::min(t/tmax, 1.0f);
-            g = 1.0 - b;
         }
         vcolor[i] = vec3(r, g, b);
     }
@@ -196,14 +205,58 @@ void TriangleMesh::renderCurvature(const std::vector<float> &c, int st, float mi
     glEnd();
 }
 
-void TriangleMesh::renderGaussianCurvature(int scaletype, float min, float max)
-{
-    renderCurvature(gaussianCurvature, scaletype, min, max);
-}
-
 void TriangleMesh::renderMedianCurvature(int scaletype, float min, float max)
 {
-    renderCurvature(medianCurvature, scaletype, min, max);
+    std::vector<float>& c = medianCurvature;
+
+    std::vector<vec3> vcolor(nVertices);
+    float tmin, tmax, tmid;
+    switch (scaletype) {
+        case 0:
+            tmin = std::max(-1e-5f, min);
+            tmax = max;
+            tmid = 0.5f*(tmin + tmax);
+            break;
+        case 1:
+            tmin = log2(1e-5f);
+            tmax = log2(std::max(max - min, 1e-5f));
+            tmid = 0.5f*(tmin + tmax);
+            break;
+    }
+
+    for (int i = 0; i < nVertices; i++) {
+        float t;
+        if (scaletype == 0)
+            t = clamp(c[i], tmin, tmax);
+        else
+            t = log2(clamp(t - min, 1e-5f, max - min));
+
+        float r, g, b;
+        if (t < tmid) {
+            r = 0.0;
+            g = (t - tmin)/(tmid - tmin);
+            b = 1.0 - g;
+        }
+        else if (t >= tmid) {
+            r = (t - tmid)/(tmax - tmid);
+            g = 1.0 - r;
+            b = 0.0;
+        }
+        vcolor[i] = vec3(r, g, b);
+    }
+
+    glBegin(GL_TRIANGLES);
+    for(int i = 0; i < (int)vTable.size(); i += 3)
+    {
+        glNormal3fv(&normals[i/3].x);
+        glColor3fv(&vcolor[vTable[i]].x);
+        glVertex3fv(&vertices[vTable[i]].x);
+        glColor3fv(&vcolor[vTable[i+1]].x);
+        glVertex3fv(&vertices[vTable[i+1]].x);
+        glColor3fv(&vcolor[vTable[i+2]].x);
+        glVertex3fv(&vertices[vTable[i+2]].x);
+    }
+    glEnd();
 }
 
 
@@ -375,7 +428,7 @@ void TriangleMesh::computeMedianCurvatures()
         if (fi0 >= 0 && fi1 >= 0) {
             vec3 nf0 = normals[fi0];
             vec3 nf1 = normals[fi1];
-            B_i = dot(nf0, nf1);
+            B_i = acos(dot(nf0, nf1));
         }
 
         // accumulate
@@ -420,11 +473,11 @@ void TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
     }
 
     // smoothing
+    std::vector<vec3> laplacian(nVertices);
     std::vector<vec3>& v = vertices;
     for (int iter = 0; iter < iterations; iter++) {
 
         // L(v_i) = 1/N*Sum(v_ij) - v_i
-        std::vector<vec3> laplacian(nVertices);
         for (int i = 0; i < nVertices; i++) {
             vec3 sum(0,0,0);
             for (int j = 0; j < (int)neighbors[i].size(); j++) {
@@ -438,10 +491,115 @@ void TriangleMesh::laplacianSmoothing(int iterations, double lambda) {
             v[i] = v[i] + float(lambda)*laplacian[i];
         }
     }
+
     computeNormalsPerFace();
     computeGaussianCurvatures();
     computeMedianCurvatures();
 }
+
+
+void TriangleMesh::taubinSmoothing(int iterations, double lambda, double mu) {
+
+    // precompute neighbor information
+    std::vector<std::vector<int> > neighbors(nVertices);
+    for (int i = 0; i < (int)vTable.size(); i++) {
+        int vi  = cornerTable.vertex(i);
+        int vij = cornerTable.vertex(cornerTable.next(i));
+        neighbors[vi].push_back(vij);
+    }
+
+    // smoothing
+    std::vector<vec3> laplacian(nVertices);
+    std::vector<vec3>& v = vertices;
+    for (int iter = 0; iter < iterations; iter++) {
+
+        // L(v_i) = 1/N*Sum(v_ij) - v_i
+        for (int i = 0; i < nVertices; i++) {
+            vec3 sum(0,0,0);
+            for (int j = 0; j < (int)neighbors[i].size(); j++) {
+                sum += v[neighbors[i][j]];
+            }
+            laplacian[i] = sum/float(neighbors[i].size()) - v[i];
+        }
+
+        if (iter%2 == 0) {
+            // v_i' = v_i + lambda * L(v_i)
+            for (int i = 0; i < nVertices; i++) {
+                v[i] = v[i] + float(lambda)*laplacian[i];
+            }
+        }
+        else {
+            // v_i' = v_i + mu * L(v_i)
+            for (int i = 0; i < nVertices; i++) {
+                v[i] = v[i] + float(mu)*laplacian[i];
+            }
+        }
+    }
+
+    computeNormalsPerFace();
+    computeGaussianCurvatures();
+    computeMedianCurvatures();
+}
+
+
+
+void TriangleMesh::tangentialSmoothing(int iterations, double lambda) {
+
+    // precompute neighbor information
+    std::vector<std::vector<int> > neighbors(nVertices);
+    for (int i = 0; i < (int)vTable.size(); i++) {
+        int vi  = cornerTable.vertex(i);
+        int vij = cornerTable.vertex(cornerTable.next(i));
+        neighbors[vi].push_back(vij);
+    }
+
+    // smoothing
+    std::vector<vec3> laplacian(nVertices);
+    std::vector<vec3> Ltangential(nVertices);
+    std::vector<vec3>& v = vertices;
+    for (int iter = 0; iter < iterations; iter++) {
+
+        // normals weighted by area
+        std::vector<vec3> vnormal(nVertices, vec3(0,0,0));
+        for (int i = 0; i < (int)vTable.size(); i += 3) {
+            int vi0 = cornerTable.vertex(i);
+            int vi1 = cornerTable.vertex(cornerTable.next(i));
+            int vi2 = cornerTable.vertex(cornerTable.prev(i));
+            vec3 cp = cross(vertices[vi1] - vertices[vi0], vertices[vi2] - vertices[vi0]);
+            vnormal[vi0] += cp;
+            vnormal[vi1] += cp;
+            vnormal[vi2] += cp;
+        }
+        for (int i = 0; i < nVertices; i++) {
+            vnormal[i] = normalize(vnormal[i]);
+        }
+
+        // L(v_i) = 1/N*Sum(v_ij) - v_i
+        for (int i = 0; i < nVertices; i++) {
+            vec3 sum(0,0,0);
+            for (int j = 0; j < (int)neighbors[i].size(); j++) {
+                sum += v[neighbors[i][j]];
+            }
+            laplacian[i] = sum/float(neighbors[i].size()) - v[i];
+        }
+
+        // L(v_i) = Ln(v_i) + Lt(v_i)
+        for (int i = 0; i < nVertices; i++) {
+            vec3 Lnormal = dot(vnormal[i], laplacian[i])*vnormal[i];
+            Ltangential[i] = laplacian[i] - Lnormal;
+        }
+
+        // v_i' = v_i + lambda * Lt(v_i)
+        for (int i = 0; i < nVertices; i++) {
+            v[i] = v[i] + float(lambda)*Ltangential[i];
+        }
+    }
+
+    computeNormalsPerFace();
+    computeGaussianCurvatures();
+    computeMedianCurvatures();
+}
+
 
 
 void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollapses) {
