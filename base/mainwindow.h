@@ -33,6 +33,7 @@ private slots:
     void on_actionRenderOriginal_triggered();
     void on_actionRenderSmoothed_triggered();
     void on_actionRenderCollapsed_triggered();
+    void on_actionWireframe_triggered();
 
     void on_actionCurvatureParams_triggered();
     void on_actionSmooth_triggered();

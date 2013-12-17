@@ -54,6 +54,12 @@ void MainWindow::on_actionOpen_triggered()
 	{
 		if(!ui->glwidget->loadMesh(filename))
 			QMessageBox::warning(this, tr("Error"), tr("The file could not be opened"));
+        else {
+            ui->actionRenderOriginal->setChecked(true);
+            ui->actionRenderNormal->setChecked(true);
+            on_actionRenderNormal_triggered();
+            on_actionRenderOriginal_triggered();
+        }
 	}
 }
 
@@ -65,6 +71,12 @@ void MainWindow::on_actionClose_triggered()
 void MainWindow::on_actionRest_triggered()
 {
 	ui->glwidget->resetCamera();
+}
+
+void MainWindow::on_actionWireframe_triggered()
+{
+    ui->glwidget->gWireframe = ui->actionWireframe->isChecked();
+    ui->glwidget->updateGL();
 }
 
 void MainWindow::on_actionRenderNormal_triggered()
@@ -88,12 +100,20 @@ void MainWindow::on_actionRenderCorners_triggered()
 void MainWindow::on_actionRenderGCurvature_triggered()
 {
     ui->glwidget->gRendertype = RENDER_GAUSSIAN_CURVATURE;
+    float cmin, cmax;
+    ui->glwidget->getCurvatureBounds(cmin, cmax);
+    ui->glwidget->curvatureRenderMin = cmin;
+    ui->glwidget->curvatureRenderMax = cmax;
     ui->glwidget->updateGL();
 }
 
 void MainWindow::on_actionRenderMCurvature_triggered()
 {
     ui->glwidget->gRendertype = RENDER_MEDIAN_CURVATURE;
+    float cmin, cmax;
+    ui->glwidget->getCurvatureBounds(cmin, cmax);
+    ui->glwidget->curvatureRenderMin = cmin;
+    ui->glwidget->curvatureRenderMax = cmax;
     ui->glwidget->updateGL();
 }
 

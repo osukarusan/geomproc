@@ -56,6 +56,8 @@
     <addaction name="actionRenderGCurvature"/>
     <addaction name="actionRenderMCurvature"/>
     <addaction name="separator"/>
+    <addaction name="actionWireframe"/>
+    <addaction name="separator"/>
     <addaction name="actionCurvatureParams"/>
     <addaction name="separator"/>
     <addaction name="actionRenderOriginal"/>
@@ -107,6 +109,9 @@
    <property name="text">
     <string>Normal</string>
    </property>
+   <property name="shortcut">
+    <string notr="true">Shift+N</string>
+   </property>
   </action>
   <action name="actionRenderCorners">
    <property name="checkable">
@@ -114,6 +119,9 @@
    </property>
    <property name="text">
     <string>Corners</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+T</string>
    </property>
   </action>
   <action name="actionRenderGCurvature">
@@ -123,10 +131,16 @@
    <property name="text">
     <string>Gaussian curvature</string>
    </property>
+   <property name="shortcut">
+    <string>Shift+G</string>
+   </property>
   </action>
   <action name="actionSmooth">
    <property name="text">
     <string>Laplacian Smooth...</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+L</string>
    </property>
   </action>
   <action name="actionRenderOriginal">
@@ -139,6 +153,9 @@
    <property name="text">
     <string>Original</string>
    </property>
+   <property name="shortcut">
+    <string>Shift+O</string>
+   </property>
   </action>
   <action name="actionRenderSmoothed">
    <property name="checkable">
@@ -147,6 +164,9 @@
    <property name="text">
     <string>Smoothed</string>
    </property>
+   <property name="shortcut">
+    <string>Shift+S</string>
+   </property>
   </action>
   <action name="actionRenderCollapsed">
    <property name="checkable">
@@ -154,6 +174,9 @@
    </property>
    <property name="text">
     <string>Collapsed</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+C</string>
    </property>
   </action>
   <action name="actionEdgeCollapse">
@@ -168,6 +191,9 @@
    <property name="text">
     <string>Valence</string>
    </property>
+   <property name="shortcut">
+    <string>Shift+V</string>
+   </property>
   </action>
   <action name="actionRenderMCurvature">
    <property name="checkable">
@@ -175,6 +201,9 @@
    </property>
    <property name="text">
     <string>Median curvature</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+M</string>
    </property>
   </action>
   <action name="actionCurvatureParams">
@@ -190,6 +219,17 @@
   <action name="actionTangential">
    <property name="text">
     <string>Tangential Smooth...</string>
+   </property>
+  </action>
+  <action name="actionWireframe">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Wireframe</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+W</string>
    </property>
   </action>
  </widget>

@@ -21,6 +21,7 @@ class GLWidget : public QGLWidget
 public:
     RenderType gRendertype;
     RenderMesh gRendermesh;
+    bool       gWireframe;
 
     int    curvatureScaleType;
     double curvatureRenderMin;
@@ -28,8 +29,7 @@ public:
 
 private:
 	Camera cam;
-	int initx, inity;
-    bool bWireframe;
+    int initx, inity;
 	TriangleMesh *mesh;
     TriangleMesh *smoothedMesh;
     TriangleMesh *collapsedMesh;
@@ -56,8 +56,7 @@ protected:
 
 	void mousePressEvent(QMouseEvent *event);
 	void mouseMoveEvent(QMouseEvent *event);
-	void mouseReleaseEvent(QMouseEvent *event);
-	void keyPressEvent(QKeyEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
 
     TriangleMesh* getDisplayMesh() const;
 

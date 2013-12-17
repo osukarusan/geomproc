@@ -159,7 +159,7 @@ void TriangleMesh::renderGaussianCurvature(int scaletype, float min, float max)
     float tmin, tmax, tmid;
     switch (scaletype) {
         case 0:
-            tmin = std::max(-1e-5f, min);
+            tmin = min;
             tmax = max;
             tmid = 0.5f*(tmin + tmax);
             break;
@@ -178,7 +178,7 @@ void TriangleMesh::renderGaussianCurvature(int scaletype, float min, float max)
             t = log2(clamp(c[i] - min, 1.0f/256.0f, std::max(max - min, 1.0f/256.0f)));
 
         float r, g, b;
-        if (tmin < 0 && c[i] < 0) {
+        if (min < 0 && c[i] < 0) {
             r = 0.0;
             g = (t - tmin)/(tmid - tmin);
             b = 1.0 - g;
@@ -213,7 +213,7 @@ void TriangleMesh::renderMedianCurvature(int scaletype, float min, float max)
     float tmin, tmax, tmid;
     switch (scaletype) {
         case 0:
-            tmin = std::max(-1e-5f, min);
+            tmin = min;
             tmax = max;
             tmid = 0.5f*(tmin + tmax);
             break;
@@ -609,6 +609,7 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
     for (int i = 0; i < (int)ot.size(); i++) {
         if (ot[i] < 0) {
             std::cerr << "Warning! Mesh has holes" << std::endl;
+            break;
         }
     }
 
@@ -653,10 +654,11 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
             int tl = cornerTable.triangle(cl);
             int tr = cornerTable.triangle(cr);
 
-
             // check both vertices and corners are still valid
-            if (   !validVertex[vi]   || !validVertex[vf]
-                || !validTriangle[tl] || !validTriangle[tr])
+            if (   (vi >= 0 && !validVertex[vi])
+                || (vf >= 0 && !validVertex[vf])
+                || (tl >= 0 && !validTriangle[tl])
+                || (tr >= 0 && !validTriangle[tr]))
                 continue;
 
             // check #vertices in 1-ring intersections is exactly 2
@@ -730,15 +732,15 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
 
             // update otable
             std::vector<int>& otable = cornerTable.getOTable();
-            otable[cio1] = cfo1;
-            otable[cfo1] = cio1;
-            otable[cio2] = cfo2;
-            otable[cfo2] = cio2;
+            if (cio1 >= 0)    otable[cio1] = cfo1;
+            if (cfo1 >= 0)    otable[cfo1] = cio1;
+            if (cio2 >= 0)    otable[cio2] = cfo2;
+            if (cfo2 >= 0)    otable[cfo2] = cio2;
 
             // mark vertex and corners as invalid
-            validVertex  [vi] = false;
-            validTriangle[tl] = false;
-            validTriangle[tr] = false;
+            validVertex[vi] = false;
+            if (tl >= 0) validTriangle[tl] = false;
+            if (tr >= 0) validTriangle[tr] = false;
             finalFaces -= 2;
             collapses++;
         }
@@ -753,30 +755,23 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
                 vertices.erase(vertices.begin() + nVertices);
         }
 
-        std::vector<int> newfaces(3*finalFaces, -1);
-        int fid = 0;
+        std::vector<int> newfaces;
+        newfaces.reserve(3*finalFaces);
         for (int i = 0; i < (int)vTable.size(); i += 3) {
             if (validTriangle[i/3]) {
                 if (vertmap[vTable[i]] >= 0 &&
                     vertmap[vTable[i+1]] >= 0 &&
                     vertmap[vTable[i+2]] >= 0)
                 {
-                    newfaces[fid    ] = vertmap[vTable[i    ]];
-                    newfaces[fid + 1] = vertmap[vTable[i + 1]];
-                    newfaces[fid + 2] = vertmap[vTable[i + 2]];
-                    fid += 3;
-                }
-                else
-                {
-                    finalFaces--;
-                    newfaces.resize(3*finalFaces);
+                    newfaces.push_back(vertmap[vTable[i    ]]);
+                    newfaces.push_back(vertmap[vTable[i + 1]]);
+                    newfaces.push_back(vertmap[vTable[i + 2]]);
                 }
             }
         }
 
         vTable = newfaces;
         nFaces = finalFaces;
-
         cornerTable.buildTable(vTable);
 
         std::cout << "Verts = " << nVertices << std::endl;

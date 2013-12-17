@@ -13,7 +13,7 @@ GLWidget::GLWidget(QWidget *parent) :
 	mesh = NULL;
     smoothedMesh = NULL;
     collapsedMesh = NULL;
-    bWireframe = false;
+    gWireframe = false;
     gRendertype = RENDER_NORMAL;
     gRendermesh = RENDER_ORIGINAL;
     curvatureScaleType = 0;
@@ -36,7 +36,7 @@ bool GLWidget::loadMesh(const QString &filename)
 		resetCamera();
         curvatureRenderMin = cmin;
         curvatureRenderMax = cmax;
-		bWireframe = false;
+		gWireframe = false;
 		return true;
 	}
 
@@ -99,7 +99,7 @@ void GLWidget::paintGL()
 {
 	cam.setOpenGLMatrices();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	if(bWireframe)
+	if(gWireframe)
 		glDisable(GL_LIGHTING);
 	else
 		glEnable(GL_LIGHTING);
@@ -108,7 +108,7 @@ void GLWidget::paintGL()
     if(renderMesh != NULL) {
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        if (bWireframe) {
+        if (gWireframe) {
             glPolygonOffset(10, 10);
             glEnable(GL_POLYGON_OFFSET_FILL);
             glColor3f(1.f, 1.f, 1.f);
@@ -119,7 +119,7 @@ void GLWidget::paintGL()
 
         switch (gRendertype) {
             case RENDER_NORMAL:
-                if (bWireframe) glColor3f(0.0f, 0.0f, 0.0f);
+                if (gWireframe) glColor3f(0.0f, 0.0f, 0.0f);
                 else            glColor3f(0.7f, 0.7f, 0.9f);
                 renderMesh->renderNormal();
                 break;
@@ -188,14 +188,6 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event)
 	}
 }
 
-void GLWidget::keyPressEvent(QKeyEvent *event)
-{
-	if(event->key() == Qt::Key_F1)
-	{
-		bWireframe = !bWireframe;
-		updateGL();
-    }
-}
 
 void GLWidget::getCurvatureBounds(float &min, float &max) {
     TriangleMesh* cmesh = getDisplayMesh();
