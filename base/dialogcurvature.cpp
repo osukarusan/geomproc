@@ -17,6 +17,8 @@ DialogCurvature::~DialogCurvature()
 }
 
 void DialogCurvature::updateRender() {
+    ui->sb_max->setMinimum(ui->sb_min->value());
+    ui->sb_min->setMaximum(ui->sb_max->value());
     emit parametersChanged();
 }
 
@@ -34,13 +36,13 @@ int DialogCurvature::getScalingType() {
 
 void DialogCurvature::setMinValue(double min, double current) {
     ui->sb_min->setMinimum(min);
-    ui->sb_min->setMaximum(0);
+    ui->sb_max->setMinimum(current);
     ui->sb_min->setValue(current);
 }
 
 void DialogCurvature::setMaxValue(double max, double current) {
     ui->sb_max->setMaximum(max);
-    ui->sb_max->setMinimum(0);
+    ui->sb_min->setMaximum(current);
     ui->sb_max->setValue(current);
 }
 

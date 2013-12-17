@@ -164,8 +164,8 @@ void TriangleMesh::renderGaussianCurvature(int scaletype, float min, float max)
             tmid = 0.5f*(tmin + tmax);
             break;
         case 1:
-            tmin = log2(1e-5f);
-            tmax = log2(std::max(max - min, 1e-5f));
+            tmin = log2(1.0f/256.0f);
+            tmax = log2(std::max(max - min, 1.0f/256.0f));
             tmid = 0.5f*(tmin + tmax);
             break;
     }
@@ -175,7 +175,7 @@ void TriangleMesh::renderGaussianCurvature(int scaletype, float min, float max)
         if (scaletype == 0)
             t = clamp(c[i], tmin, tmax);
         else
-            t = log2(clamp(t - min, 1e-5f, max - min));
+            t = log2(clamp(c[i] - min, 1.0f/256.0f, std::max(max - min, 1.0f/256.0f)));
 
         float r, g, b;
         if (tmin < 0 && c[i] < 0) {
@@ -218,8 +218,8 @@ void TriangleMesh::renderMedianCurvature(int scaletype, float min, float max)
             tmid = 0.5f*(tmin + tmax);
             break;
         case 1:
-            tmin = log2(1e-5f);
-            tmax = log2(std::max(max - min, 1e-5f));
+            tmin = log2(1.0f/256.0f);
+            tmax = log2(std::max(max - min, 1.0f/256.0f));
             tmid = 0.5f*(tmin + tmax);
             break;
     }
@@ -229,7 +229,7 @@ void TriangleMesh::renderMedianCurvature(int scaletype, float min, float max)
         if (scaletype == 0)
             t = clamp(c[i], tmin, tmax);
         else
-            t = log2(clamp(t - min, 1e-5f, max - min));
+            t = log2(clamp(c[i] - min, 1.0f/256.0f, std::max(max - min, 1.0f/256.0f)));
 
         float r, g, b;
         if (t < tmid) {
@@ -378,7 +378,7 @@ void TriangleMesh::computeGaussianCurvatures()
                 // sum the angle of this corner
                 v1 = normalize(v1);
                 v2 = normalize(v2);
-                angleSum[vid] += acos(dot(v1, v2));
+                angleSum[vid] += acos(clamp(dot(v1, v2), -1.0f, 1.0f));
             }
         }
     }
@@ -428,7 +428,7 @@ void TriangleMesh::computeMedianCurvatures()
         if (fi0 >= 0 && fi1 >= 0) {
             vec3 nf0 = normals[fi0];
             vec3 nf1 = normals[fi1];
-            B_i = acos(dot(nf0, nf1));
+            B_i = acos(clamp(dot(nf0, nf1), -1.0f, 1.0f));
         }
 
         // accumulate
@@ -441,6 +441,7 @@ void TriangleMesh::computeMedianCurvatures()
             vec3 v0 = vertices[vid];
             vec3 v1 = vertices[vi1] - v0;
             vec3 v2 = vertices[vi2] - v0;
+            vec3 cp = cross(v1, v2);
             areaSum[vid] += 0.5*(length(cross(v1, v2)));
         }
     }
@@ -606,8 +607,9 @@ void TriangleMesh::edgeCollapse(int iterations, double threshold, int maxCollaps
 
     std::vector<int>& ot = cornerTable.getOTable();
     for (int i = 0; i < (int)ot.size(); i++) {
-        if (ot[i] < 0)
-            std::cerr << "No opposite at corner " << i << " for vertex " << cornerTable.vertex(i) << std::endl;
+        if (ot[i] < 0) {
+            std::cerr << "Warning! Mesh has holes" << std::endl;
+        }
     }
 
     BBox bbox;
