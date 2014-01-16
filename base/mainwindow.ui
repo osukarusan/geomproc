@@ -139,9 +139,6 @@
    <property name="text">
     <string>Laplacian Smooth...</string>
    </property>
-   <property name="shortcut">
-    <string>Shift+L</string>
-   </property>
   </action>
   <action name="actionRenderOriginal">
    <property name="checkable">
